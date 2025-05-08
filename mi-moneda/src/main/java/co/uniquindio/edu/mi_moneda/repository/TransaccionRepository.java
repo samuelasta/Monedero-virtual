@@ -17,7 +17,7 @@ public interface TransaccionRepository extends MongoRepository<Transaccion,Strin
      * @param transaccion La transacción financiera asociada
      * @return Lista de transacciones de puntos asociadas
      */
-    List<TransaccionPuntos> findByTransaccionAsociada(Transaccion transaccion);
+    //List<TransaccionPuntos> findByTransaccionAsociada(Transaccion transaccion);
 
     /**
      * Busca transacciones de puntos de un tipo específico
