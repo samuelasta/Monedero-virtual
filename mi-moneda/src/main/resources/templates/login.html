@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -103,12 +103,30 @@
                                 <div class="text-center mt-3">
                                     <a href="#" class="text-decoration-none">¿Olvidaste tu contraseña?</a>
                                 </div>
+
+                                <!-- Mensaje de error -->
+                                <div th:if="${loginError}" class="alert alert-danger mt-3">
+                                    <span th:text="${loginError}"></span>
+                                </div>
+
+                                <!-- Mensaje de registro exitoso -->
+                                <div th:if="${registrationSuccess}" class="alert alert-success mt-3">
+                                    <span th:text="${registrationSuccess}"></span>
+                                </div>
                             </form>
                         </div>
 
                         <!-- Formulario de Registro -->
                         <div class="tab-pane fade" id="register" role="tabpanel" aria-labelledby="register-tab">
                             <form th:action="@{/register}" method="post">
+                                <div class="mb-3">
+                                    <label for="registerId" class="form-label">ID (opcional)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
+                                        <input type="text" class="form-control" id="registerId" name="clienteId" placeholder="Dejar en blanco para generar automáticamente">
+                                    </div>
+                                    <small class="text-muted">Si lo dejas en blanco, se generará automáticamente</small>
+                                </div>
                                 <div class="mb-3">
                                     <label for="registerName" class="form-label">Nombre Completo</label>
                                     <div class="input-group">
@@ -143,6 +161,11 @@
                                 </div>
                                 <div class="d-grid gap-2">
                                     <button type="submit" class="btn btn-primary">Registrarse</button>
+                                </div>
+
+                                <!-- Mensaje de error -->
+                                <div th:if="${registerError}" class="alert alert-danger mt-3">
+                                    <span th:text="${registerError}"></span>
                                 </div>
                             </form>
                         </div>
