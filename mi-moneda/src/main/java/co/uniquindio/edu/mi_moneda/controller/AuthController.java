@@ -30,29 +30,32 @@ public class AuthController {
     /**
      * Procesa la solicitud de inicio de sesión
      */
-    @PostMapping("/login")
-    public String processLogin(@RequestParam String email,
-                               @RequestParam String password,
-                               HttpSession session,
-                               Model model) {
-        try {
+    //@PostMapping("/login")
+    //public String processLogin(@RequestParam String email,
+                //               @RequestParam String password,
+               //                HttpSession session,
+               //                Model model) {
+        //System.out.println("Intento de login para: " + email);
+        //try {
+        //    System.out.println("Intento de login para: " + email);
             // Intentar autenticar al cliente
-            Cliente cliente = clienteService.autenticarCliente(email, password);
+            //Cliente cliente = clienteService.autenticarCliente(email, password);
 
             // Si la autenticación es exitosa, guardar el cliente en la sesión
-            session.setAttribute("clienteId", cliente.getId());
-            session.setAttribute("clienteNombre", cliente.getNombre());
-            session.setAttribute("clienteEmail", cliente.getEmail());
-            session.setAttribute("clienteRango", cliente.getRango());
+            //session.setAttribute("clienteId", cliente.getId());
+            //session.setAttribute("clienteNombre", cliente.getNombre());
+            //session.setAttribute("clienteEmail", cliente.getEmail());
+            //session.setAttribute("clienteRango", cliente.getRango());
 
             // Redirigir al dashboard
-            return "redirect:/dashboard";
-        } catch (Exception e) {
+          //  return "redirect:/dashboard";
+        //} catch (Exception e) {
+          //  System.out.println("Intento de login para: " + email);
             // Si hay un error, mostrar mensaje en la página de login
-            model.addAttribute("loginError", e.getMessage());
-            return "login";
-        }
-    }
+        //    model.addAttribute("loginError", e.getMessage());
+      //      return "login";
+     //   }
+  //  }
 
     /**
      * Procesa la solicitud de registro de un nuevo cliente
@@ -92,31 +95,7 @@ public class AuthController {
     /**
      * Muestra el dashboard del cliente autenticado
      */
-    @GetMapping("/dashboard")
-    public String showDashboard(HttpSession session, Model model) {
-        // Verificar si el usuario está autenticado
-        if (session.getAttribute("clienteId") == null) {
-            return "redirect:/login-page";
-        }
 
-        // Obtener información del cliente de la sesión
-        String clienteId = (String) session.getAttribute("clienteId");
-
-        try {
-            // Obtener el cliente de la base de datos
-            Cliente cliente = clienteService.buscarClientePorId(clienteId);
-            model.addAttribute("cliente", cliente);
-
-            // Aquí podrías agregar más atributos al modelo según lo que necesites mostrar en el dashboard
-            // Por ejemplo, los monederos del cliente, transacciones recientes, etc.
-
-            return "dashboard";
-        } catch (Exception e) {
-            // Si hay un error (por ejemplo, si el cliente ya no existe), cerrar sesión
-            session.invalidate();
-            return "redirect:/login-page";
-        }
-    }
 
     /**
      * Procesa la solicitud de cierre de sesión

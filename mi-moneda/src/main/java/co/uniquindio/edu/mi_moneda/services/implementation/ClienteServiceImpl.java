@@ -47,12 +47,6 @@ public class ClienteServiceImpl implements ClienteService {
         cliente.setPassword(passwordEncoder.encode(password));
         cliente.setRango("BRONCE");
 
-        // Inicializar colecciones
-        cliente.setMonederos(new SimpleList<>());
-        cliente.setHistorialTransacciones(new DoubleList<>());
-        cliente.setNotificaciones(new SimpleList<>());
-        cliente.setTransaccionesProgramadas(new QueueTransactionProgramed());
-
         // Crear y asociar puntos
         Puntos puntos = new Puntos();
         puntos.setId(UUID.randomUUID().toString());
@@ -69,7 +63,9 @@ public class ClienteServiceImpl implements ClienteService {
 
     @Override
     public Cliente autenticarCliente(String email, String password) throws Exception {
+        System.out.println("Buscando cliente con email: " + email);
         Optional<Cliente> clienteOpt = clienteRepository.findByEmail(email);
+        System.out.println("¿Cliente encontrado? " + clienteOpt.isPresent());
 
         if (clienteOpt.isEmpty()) {
             throw new Exception("Correo electrónico o contraseña incorrectos");
@@ -93,5 +89,11 @@ public class ClienteServiceImpl implements ClienteService {
         }
 
         return clienteOpt.get();
+    }
+
+    @Override
+    public Cliente buscarClientePorEmail(String email) throws Exception {
+        return clienteRepository.findByEmail(email)
+                .orElseThrow(() -> new Exception("Cliente no encontrado con email: " + email));
     }
 }

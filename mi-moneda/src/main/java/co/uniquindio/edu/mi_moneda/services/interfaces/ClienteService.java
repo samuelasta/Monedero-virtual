@@ -31,4 +31,6 @@ public interface ClienteService {
      * @throws Exception Si no se encuentra el cliente
      */
     Cliente buscarClientePorId(String id) throws Exception;
+
+    Cliente buscarClientePorEmail(String email) throws Exception;
 }

@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonederoApp - Dashboard</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2575fc;
+            --secondary-color: #6a11cb;
+        }
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            padding: 0.75rem 1rem;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .sidebar .nav-link i {
+            margin-right: 0.5rem;
+        }
+        .card {
+            border-radius: 1rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: none;
+            margin-bottom: 1.5rem;
+        }
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+        }
+        .balance-card {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+        }
+        .balance-card .card-body {
+            padding: 2rem;
+        }
+        .badge-rank {
+            font-size: 0.8rem;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+        }
+        .badge-bronze {
+            background-color: #cd7f32;
+        }
+        .badge-silver {
+            background-color: #c0c0c0;
+        }
+        .badge-gold {
+            background-color: #ffd700;
+            color: #212529;
+        }
+        .badge-platinum {
+            background-color: #e5e4e2;
+            color: #212529;
+        }
+        .quick-action {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+        .quick-action:hover {
+            background-color: #e9ecef;
+            transform: translateY(-5px);
+        }
+        .quick-action i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+        .transaction-item {
+            padding: 0.75rem;
+            border-bottom: 1px solid #f1f1f1;
+        }
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+        .transaction-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+        }
+        .transaction-deposit {
+            background-color: rgba(25, 135, 84, 0.1);
+            color: #198754;
+        }
+        .transaction-withdraw {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+        .transaction-transfer {
+            background-color: rgba(13, 110, 253, 0.1);
+            color: #0d6efd;
+        }
+        .amount-positive {
+            color: #198754;
+        }
+        .amount-negative {
+            color: #dc3545;
+        }
+
+        /* Nuevos estilos para la distribución mejorada */
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 20px;
+        }
+
+        .dashboard-row {
+            margin-bottom: 20px;
+        }
+
+        .info-card {
+            height: 100%;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        /* Para pantallas más pequeñas */
+        @media (max-width: 992px) {
+            .col-lg-3 {
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+            <div class="position-sticky pt-3">
+                <div class="text-center mb-4">
+                    <h3 class="fw-bold">MonederoApp</h3>
+                    <i class="bi bi-wallet2 fs-1"></i>
+                </div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/dashboard">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/wallets">
+                            <i class="bi bi-wallet"></i> Mis Monederos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/transactions">
+                            <i class="bi bi-arrow-left-right"></i> Transacciones
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/scheduled">
+                            <i class="bi bi-calendar-check"></i> Programadas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/points">
+                            <i class="bi bi-star"></i> Puntos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/analytics">
+                            <i class="bi bi-graph-up"></i> Análisis
+                        </a>
+                    </li>
+                    <li class="nav-item mt-5">
+                        <a class="nav-link" href="/profile">
+                            <i class="bi bi-person-circle"></i> Mi Perfil
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">
+                            <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 dashboard-container">
+            <!-- Top Navigation -->
+            <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4 shadow-sm rounded-3">
+                <div class="container-fluid">
+                    <button class="navbar-toggler d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target=".sidebar">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="d-flex align-items-center">
+                        <span class="text-dark me-2">Bienvenido,</span>
+                        <span class="fw-bold" th:text="${cliente.nombre}">Usuario</span>
+                    </div>
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-bell"></i>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                      th:if="${cantidadNotificaciones > 0}"
+                                      th:text="${cantidadNotificaciones}">0</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                <li th:if="${notificacionesNoLeidas.isEmpty()}">
+                                    <a class="dropdown-item" href="#">No hay notificaciones nuevas</a>
+                                </li>
+                                <li th:each="notificacion : ${notificacionesNoLeidas}">
+                                    <a class="dropdown-item" href="#" th:text="${notificacion.mensaje}">Notificación</a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/notifications">Ver todas</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Primera fila: Balance y Acciones Rápidas -->
+            <div class="row dashboard-row">
+                <!-- Balance Card -->
+                <div class="col-md-6 mb-4">
+                    <div class="card balance-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-4">
+                                <div>
+                                    <h6 class="text-white-50">Balance Total</h6>
+                                    <h2 class="display-5 fw-bold">$<span th:text="${#numbers.formatDecimal(balanceTotal, 0, 'COMMA', 2, 'POINT')}">0.00</span></h2>
+                                </div>
+                                <span th:class="'badge badge-rank badge-' + ${#strings.toLowerCase(cliente.rango)}" th:text="${cliente.rango}">RANGO</span>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="d-flex flex-column">
+                                        <span class="text-white-50">Puntos</span>
+                                        <span class="fs-5" th:text="${puntos.puntosAcumulados} + ' pts'">0 pts</span>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="d-flex flex-column">
+                                        <span class="text-white-50">Monederos</span>
+                                        <span class="fs-5" th:text="${cantidadMonederos} + ' activos'">0 activos</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <i class="bi bi-lightning-charge"></i> Acciones Rápidas
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-6 col-sm-3">
+                                    <a href="/transactions/deposit" class="text-decoration-none">
+                                        <div class="quick-action">
+                                            <i class="bi bi-plus-circle"></i>
+                                            <div>Depositar</div>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                    <a href="/transactions/withdraw" class="text-decoration-none">
+                                        <div class="quick-action">
+                                            <i class="bi bi-dash-circle"></i>
+                                            <div>Retirar</div>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                    <a href="/transactions/transfer" class="text-decoration-none">
+                                        <div class="quick-action">
+                                            <i class="bi bi-arrow-left-right"></i>
+                                            <div>Transferir</div>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                    <a href="/points/redeem" class="text-decoration-none">
+                                        <div class="quick-action">
+                                            <i class="bi bi-gift"></i>
+                                            <div>Canjear</div>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Segunda fila: 4 paneles en layout más compacto -->
+            <div class="row dashboard-row">
+                <!-- Transacciones Recientes -->
+                <div class="col-md-6 col-lg-3 mb-lg-0 mb-4">
+                    <div class="card info-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-clock-history"></i> Transacciones
+                            </div>
+                            <a href="/transactions" class="btn btn-sm btn-outline-primary">Ver</a>
+                        </div>
+                        <div class="card-body p-0">
+                            <div th:if="${transaccionesRecientes.isEmpty()}" class="transaction-item text-center py-3">
+                                <p class="text-muted mb-0 small">No hay transacciones recientes</p>
+                            </div>
+                            <div th:each="transaccion : ${transaccionesRecientes}" class="transaction-item d-flex align-items-center">
+                                <div th:class="'transaction-icon ' + ${transaccion.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).DEPOSITO ? 'transaction-deposit' : (transaccion.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).RETIRO ? 'transaction-withdraw' : 'transaction-transfer')}" style="width: 30px; height: 30px;">
+                                    <i th:class="'bi ' + ${transaccion.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).DEPOSITO ? 'bi-arrow-down' : (transaccion.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).RETIRO ? 'bi-arrow-up' : 'bi-arrow-right')}" style="font-size: 0.9rem;"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-0 small" th:text="${transaccion.tipo}">Tipo</h6>
+                                            <small class="text-muted" style="font-size: 0.7rem;" th:text="${#temporals.format(transaccion.fecha, 'dd/MM/yyyy, HH:mm')}">Fecha</small>
+                                        </div>
+                                        <div th:class="${transaccion.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).DEPOSITO ? 'amount-positive' : 'amount-negative'}"
+                                             th:text="${transaccion.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).DEPOSITO ? '+' : '-'} + '$' + ${#numbers.formatDecimal(transaccion.monto, 0, 'COMMA', 2, 'POINT')}"
+                                             style="font-size: 0.9rem;">
+                                            Monto
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Análisis de Gastos -->
+                <div class="col-md-6 col-lg-3 mb-lg-0 mb-4">
+                    <div class="card info-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-pie-chart"></i> Análisis
+                            </div>
+                            <a href="/analytics" class="btn btn-sm btn-outline-primary">Ver</a>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="spendingChart" height="180"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transacciones Programadas -->
+                <div class="col-md-6 col-lg-3 mb-lg-0 mb-4">
+                    <div class="card info-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-calendar-event"></i> Programadas
+                            </div>
+                            <a href="/scheduled" class="btn btn-sm btn-outline-primary">Ver</a>
+                        </div>
+                        <div class="card-body p-0">
+                            <div th:if="${transaccionesProgramadas.isEmpty()}" class="transaction-item text-center py-3">
+                                <p class="text-muted mb-0 small">No hay transacciones programadas</p>
+                            </div>
+                            <div th:each="transaccion : ${transaccionesProgramadas}" class="transaction-item d-flex align-items-center">
+                                <div class="transaction-icon transaction-transfer" style="width: 30px; height: 30px;">
+                                    <i class="bi bi-arrow-right" style="font-size: 0.9rem;"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-0 small" th:text="${transaccion.descripcion}">Descripción</h6>
+                                            <small class="text-muted" style="font-size: 0.7rem;" th:text="${#temporals.format(transaccion.fechaProgramada, 'dd/MM/yyyy, HH:mm')}">Fecha</small>
+                                        </div>
+                                        <div class="amount-negative" style="font-size: 0.9rem;" th:text="'-$' + ${#numbers.formatDecimal(transaccion.monto, 0, 'COMMA', 2, 'POINT')}">
+                                            Monto
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Puntos Resumen -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card info-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-star"></i> Puntos
+                            </div>
+                            <a href="/points" class="btn btn-sm btn-outline-primary">Ver</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <h6>Puntos: <span class="fw-bold" th:text="${puntos.puntosAcumulados}">0</span></h6>
+                                <p class="text-muted small mb-1">Rango:
+                                    <span th:class="'badge bg-secondary badge-' + ${#strings.toLowerCase(cliente.rango)}"
+                                          th:text="${cliente.rango}">RANGO</span>
+                                </p>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-warning" role="progressbar"
+                                         th:style="'width: ' + ${rangosInfo.porcentajeAvance} + '%'"
+                                         th:aria-valuenow="${rangosInfo.porcentajeAvance}"
+                                         aria-valuemin="0" aria-valuemax="100"
+                                         th:text="${#numbers.formatDecimal(rangosInfo.porcentajeAvance, 0, 0)}+'%'">0%</div>
+                                </div>
+                                <small class="text-muted" style="font-size: 0.7rem;" th:if="${rangosInfo.puntosNecesarios > 0}">
+                                    <span th:text="${rangosInfo.puntosNecesarios}">0</span> pts para
+                                    <span th:text="${rangosInfo.siguienteRango}">SIGUIENTE</span>
+                                </small>
+                                <small class="text-muted" style="font-size: 0.7rem;" th:unless="${rangosInfo.puntosNecesarios > 0}">
+                                    Nivel máximo alcanzado
+                                </small>
+                            </div>
+                            <div>
+                                <h6 class="small">Beneficios Disponibles:</h6>
+                                <ul class="list-group list-group-flush" style="font-size: 0.85rem;">
+                                    <li th:if="${beneficiosDisponibles.isEmpty()}" class="list-group-item text-center py-2">
+                                        <small class="text-muted">No hay beneficios disponibles</small>
+                                    </li>
+                                    <li th:each="beneficio : ${beneficiosDisponibles}" class="list-group-item d-flex justify-content-between align-items-center py-2">
+                                        <span th:text="${beneficio.nombre}">Beneficio</span>
+                                        <span class="badge bg-primary rounded-pill" th:text="${beneficio.costePuntos} + ' pts'">0 pts</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JS Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Chart.js initialization -->
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('spendingChart').getContext('2d');
+
+        // Obtenemos los datos del modelo
+        const distribucionGastos = /*[[${distribucionGastos}]]*/ {};
+
+        // Preparamos los datos para Chart.js
+        const labels = Object.keys(distribucionGastos);
+        const data = Object.values(distribucionGastos);
+
+        const spendingChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: [
+                        '#2575fc',
+                        '#6a11cb',
+                        '#fd7e14',
+                        '#20c997',
+                        '#6c757d',
+                        '#d63384'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 10
+                            },
+                            boxWidth: 10
+                        }
+                    },
+                    tooltip: {
+                        bodyFont: {
+                            size: 12
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+</body>
+</html>
