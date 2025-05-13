@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonederoApp - Transacciones</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2575fc;
+            --secondary-color: #6a11cb;
+        }
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            padding: 0.75rem 1rem;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .sidebar .nav-link i {
+            margin-right: 0.5rem;
+        }
+        .card {
+            border-radius: 1rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: none;
+            margin-bottom: 1.5rem;
+        }
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+        }
+        .transaction-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+        }
+        .transaction-deposit {
+            background-color: rgba(25, 135, 84, 0.1);
+            color: #198754;
+        }
+        .transaction-withdraw {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+        .transaction-transfer {
+            background-color: rgba(13, 110, 253, 0.1);
+            color: #0d6efd;
+        }
+        .amount-positive {
+            color: #198754;
+            font-weight: 500;
+        }
+        .amount-negative {
+            color: #dc3545;
+            font-weight: 500;
+        }
+        .nav-pills .nav-link.active {
+            background-color: var(--primary-color);
+        }
+        .nav-pills .nav-link {
+            color: var(--primary-color);
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(37, 117, 252, 0.25);
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+            <div class="position-sticky pt-3">
+                <div class="text-center mb-4">
+                    <h3 class="fw-bold">MonederoApp</h3>
+                    <i class="bi bi-wallet2 fs-1"></i>
+                </div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/wallets">
+                            <i class="bi bi-wallet"></i> Mis Monederos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/transactions">
+                            <i class="bi bi-arrow-left-right"></i> Transacciones
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/scheduled">
+                            <i class="bi bi-calendar-check"></i> Programadas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/points">
+                            <i class="bi bi-star"></i> Puntos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/analytics">
+                            <i class="bi bi-graph-up"></i> Análisis
+                        </a>
+                    </li>
+                    <li class="nav-item mt-5">
+                        <a class="nav-link" href="/profile">
+                            <i class="bi bi-person-circle"></i> Mi Perfil
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">
+                            <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+            <!-- Top Navigation -->
+            <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4 shadow-sm rounded-3">
+                <div class="container-fluid">
+                    <button class="navbar-toggler d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target=".sidebar">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="d-flex align-items-center">
+                        <h5 class="mb-0">Transacciones</h5>
+                    </div>
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item dropdown">
+                            <button class="btn btn-primary dropdown-toggle" type="button" id="newTransactionDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-plus-lg"></i> Nueva Transacción
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="newTransactionDropdown">
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#depositModal"><i class="bi bi-arrow-down me-2"></i>Depositar</a></li>
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#withdrawModal"><i class="bi bi-arrow-up me-2"></i>Retirar</a></li>
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#transferModal"><i class="bi bi-arrow-left-right me-2"></i>Transferir</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Transactions Content -->
+            <ul class="nav nav-pills mb-4" id="transactionsTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="true">Historial de Transacciones</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="new-transaction-tab" data-bs-toggle="tab" data-bs-target="#new-transaction" type="button" role="tab" aria-controls="new-transaction" aria-selected="false">Nueva Transacción</button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="transactionsTabsContent">
+                <!-- Transaction History Tab -->
+                <div class="tab-pane fade show active" id="history" role="tabpanel" aria-labelledby="history-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <i class="bi bi-clock-history"></i> Historial de Transacciones
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                        <input type="text" class="form-control" id="transactionSearch" placeholder="Buscar transacción...">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <select class="form-select" id="walletFilter">
+                                        <option value="">Todos los Monederos</option>
+                                        <option value="1">Monedero Principal</option>
+                                        <option value="2">Monedero Ahorros</option>
+                                        <option value="3">Monedero Gastos</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" id="typeFilter">
+                                        <option value="">Todos los Tipos</option>
+                                        <option value="deposit">Depósito</option>
+                                        <option value="withdraw">Retiro</option>
+                                        <option value="transfer">Transferencia</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="date" class="form-control" id="dateFromFilter" placeholder="Desde">
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="date" class="form-control" id="dateToFilter" placeholder="Hasta">
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="transactionsTable">
+                                    <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Fecha</th>
+                                        <th>Monedero</th>
+                                        <th>Tipo</th>
+                                        <th>Descripción</th>
+                                        <th>Monto</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr>
+                                        <td>TRX-001</td>
+                                        <td>01/05/2023 10:30 AM</td>
+                                        <td>Principal</td>
+                                        <td><span class="badge bg-success">Depósito</span></td>
+                                        <td>Depósito en efectivo</td>
+                                        <td class="amount-positive">+$500.00</td>
+                                        <td><span class="badge bg-success">Completada</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#transactionDetailsModal">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>TRX-002</td>
+                                        <td>30/04/2023 3:45 PM</td>
+                                        <td>Principal</td>
+                                        <td><span class="badge bg-primary">Transferencia</span></td>
+                                        <td>Transferencia a María</td>
+                                        <td class="amount-negative">-$150.00</td>
+                                        <td><span class="badge bg-success">Completada</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#transactionDetailsModal">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>TRX-003</td>
+                                        <td>15/04/2023 5:20 PM</td>
+                                        <td>Gastos</td>
+                                        <td><span class="badge bg-danger">Retiro</span></td>
+                                        <td>Retiro en cajero</td>
+                                        <td class="amount-negative">-$200.00</td>
+                                        <td><span class="badge bg-success">Completada</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#transactionDetailsModal">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>TRX-004</td>
+                                        <td>12/04/2023 9:15 AM</td>
+                                        <td>Ahorros</td>
+                                        <td><span class="badge bg-success">Depósito</span></td>
+                                        <td>Transferencia desde Principal</td>
+                                        <td class="amount-positive">+$1,000.00</td>
+                                        <td><span class="badge bg-success">Completada</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#transactionDetailsModal">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>TRX-005</td>
+                                        <td>10/04/2023 2:30 PM</td>
+                                        <td>Principal</td>
+                                        <td><span class="badge bg-primary">Transferencia</span></td>
+                                        <td>Transferencia a Ahorros</td>
+                                        <td class="amount-negative">-$1,000.00</td>
+                                        <td><span class="badge bg-success">Completada</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#transactionDetailsModal">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>TRX-006</td>
+                                        <td>05/04/2023 11:45 AM</td>
+                                        <td>Gastos</td>
+                                        <td><span class="badge bg-danger">Retiro</span></td>
+                                        <td>Compra en supermercado</td>
+                                        <td class="amount-negative">-$350.00</td>
+                                        <td><span class="badge bg-success">Completada</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#transactionDetailsModal">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>TRX-007</td>
+                                        <td>01/04/2023 9:00 AM</td>
+                                        <td>Principal</td>
+                                        <td><span class="badge bg-success">Depósito</span></td>
+                                        <td>Depósito de nómina</td>
+                                        <td class="amount-positive">+$2,500.00</td>
+                                        <td><span class="badge bg-success">Completada</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#transactionDetailsModal">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- New Transaction Tab -->
+                <div class="tab-pane fade" id="new-transaction" role="tabpanel" aria-labelledby="new-transaction-tab">
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-arrow-down-circle text-success fs-1 mb-3"></i>
+                                    <h5>Depositar</h5>
+                                    <p class="text-muted">Agregar fondos a tu monedero</p>
+                                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#depositModal">
+                                        Realizar Depósito
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-arrow-up-circle text-danger fs-1 mb-3"></i>
+                                    <h5>Retirar</h5>
+                                    <p class="text-muted">Retirar fondos de tu monedero</p>
+                                    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#withdrawModal">
+                                        Realizar Retiro
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-arrow-left-right text-primary fs-1 mb-3"></i>
+                                    <h5>Transferir</h5>
+                                    <p class="text-muted">Enviar fondos a otro monedero</p>
+                                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#transferModal">
+                                        Realizar Transferencia
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-calendar-plus"></i> Programar Transacción Futura
+                        </div>
+                        <div class="card-body">
+                            <form>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="scheduledType" class="form-label">Tipo de Transacción</label>
+                                        <select class="form-select" id="scheduledType" required>
+                                            <option value="" selected disabled>Seleccionar tipo</option>
+                                            <option value="deposit">Depósito</option>
+                                            <option value="withdraw">Retiro</option>
+                                            <option value="transfer">Transferencia</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="scheduledWallet" class="form-label">Monedero</label>
+                                        <select class="form-select" id="scheduledWallet" required>
+                                            <option value="" selected disabled>Seleccionar monedero</option>
+                                            <option value="1">Monedero Principal</option>
+                                            <option value="2">Monedero Ahorros</option>
+                                            <option value="3">Monedero Gastos</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="scheduledAmount" class="form-label">Monto</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="scheduledAmount" min="0.01" step="0.01" placeholder="0.00" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="scheduledDate" class="form-label">Fecha Programada</label>
+                                        <input type="datetime-local" class="form-control" id="scheduledDate" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="scheduledDescription" class="form-label">Descripción</label>
+                                    <textarea class="form-control" id="scheduledDescription" rows="2" placeholder="Descripción de la transacción programada"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="scheduledRecurrence" class="form-label">Recurrencia</label>
+                                    <select class="form-select" id="scheduledRecurrence">
+                                        <option value="once">Una vez</option>
+                                        <option value="daily">Diariamente</option>
+                                        <option value="weekly">Semanalmente</option>
+                                        <option value="monthly">Mensualmente</option>
+                                    </select>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary">Programar Transacción</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Deposit Modal -->
+<div class="modal fade" id="depositModal" tabindex="-1" aria-labelledby="depositModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="depositModalLabel">Realizar Depósito</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="depositForm">
+                    <div class="mb-3">
+                        <label for="depositWallet" class="form-label">Monedero Destino</label>
+                        <select class="form-select" id="depositWallet" required>
+                            <option value="" selected disabled>Seleccionar monedero</option>
+                            <option value="1">Monedero Principal</option>
+                            <option value="2">Monedero Ahorros</option>
+                            <option value="3">Monedero Gastos</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="depositAmount" class="form-label">Monto a Depositar</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="depositAmount" min="0.01" step="0.01" placeholder="0.00" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="depositMethod" class="form-label">Método de Depósito</label>
+                        <select class="form-select" id="depositMethod" required>
+                            <option value="" selected disabled>Seleccionar método</option>
+                            <option value="cash">Efectivo</option>
+                            <option value="bank">Transferencia Bancaria</option>
+                            <option value="card">Tarjeta de Crédito/Débito</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="depositDescription" class="form-label">Descripción (Opcional)</label>
+                        <textarea class="form-control" id="depositDescription" rows="2" placeholder="Descripción del depósito"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="depositForm" class="btn btn-success">Depositar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Withdraw Modal -->
+<div class="modal fade" id="withdrawModal" tabindex="-1" aria-labelledby="withdrawModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="withdrawModalLabel">Realizar Retiro</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="withdrawForm">
+                    <div class="mb-3">
+                        <label for="withdrawWallet" class="form-label">Monedero Origen</label>
+                        <select class="form-select" id="withdrawWallet" required>
+                            <option value="" selected disabled>Seleccionar monedero</option>
+                            <option value="1">Monedero Principal - $5,250.00</option>
+                            <option value="2">Monedero Ahorros - $2,800.00</option>
+                            <option value="3">Monedero Gastos - $700.00</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="withdrawAmount" class="form-label">Monto a Retirar</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="withdrawAmount" min="0.01" step="0.01" placeholder="0.00" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="withdrawMethod" class="form-label">Método de Retiro</label>
+                        <select class="form-select" id="withdrawMethod" required>
+                            <option value="" selected disabled>Seleccionar método</option>
+                            <option value="cash">Efectivo</option>
+                            <option value="bank">Transferencia Bancaria</option>
+                            <option value="card">Tarjeta de Crédito/Débito</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="withdrawDescription" class="form-label">Descripción (Opcional)</label>
+                        <textarea class="form-control" id="withdrawDescription" rows="2" placeholder="Descripción del retiro"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="withdrawForm" class="btn btn-danger">Retirar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transfer Modal -->
+<div class="modal fade" id="transferModal" tabindex="-1" aria-labelledby="transferModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="transferModalLabel">Realizar Transferencia</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="transferForm">
+                    <div class="mb-3">
+                        <label for="transferFromWallet" class="form-label">Monedero Origen</label>
+                        <select class="form-select" id="transferFromWallet" required>
+                            <option value="" selected disabled>Seleccionar monedero origen</option>
+                            <option value="1">Monedero Principal - $5,250.00</option>
+                            <option value="2">Monedero Ahorros - $2,800.00</option>
+                            <option value="3">Monedero Gastos - $700.00</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="transferType" class="form-label">Tipo de Transferencia</label>
+                        <select class="form-select" id="transferType" required>
+                            <option value="internal" selected>Entre mis monederos</option>
+                            <option value="external">A otro usuario</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="transferToWallet" class="form-label">Monedero Destino</label>
+                        <select class="form-select" id="transferToWallet" required>
+                            <option value="" selected disabled>Seleccionar monedero destino</option>
+                            <option value="1">Monedero Principal</option>
+                            <option value="2">Monedero Ahorros</option>
+                            <option value="3">Monedero Gastos</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 d-none" id="externalRecipientDiv">
+                        <label for="externalRecipient" class="form-label">ID o Correo del Destinatario</label>
+                        <input type="text" class="form-control" id="externalRecipient" placeholder="Ingrese ID o correo electrónico">
+                    </div>
+                    <div class="mb-3">
+                        <label for="transferAmount" class="form-label">Monto a Transferir</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="transferAmount" min="0.01" step="0.01" placeholder="0.00" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="transferDescription" class="form-label">Descripción (Opcional)</label>
+                        <textarea class="form-control" id="transferDescription" rows="2" placeholder="Descripción de la transferencia"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="transferForm" class="btn btn-primary">Transferir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transaction Details Modal -->
+<div class="modal fade" id="transactionDetailsModal" tabindex="-1" aria-labelledby="transactionDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="transactionDetailsModalLabel">Detalles de la Transacción</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="transaction-icon transaction-deposit me-3">
+                        <i class="bi bi-arrow-down"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0">Depósito en efectivo</h5>
+                        <span class="text-muted">01/05/2023 10:30 AM</span>
+                    </div>
+                    <div class="ms-auto">
+                        <span class="amount-positive fs-4">+$500.00</span>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Información de la Transacción</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>ID de Transacción:</span>
+                                <span class="fw-bold">TRX-001</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Estado:</span>
+                                <span class="badge bg-success">Completada</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Monedero:</span>
+                                <span>Monedero Principal</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Método:</span>
+                                <span>Efectivo</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Puntos Ganados:</span>
+                                <span class="text-success">+5 pts</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Notas</h6>
+                        <p>Depósito realizado en la sucursal central. Fondos disponibles inmediatamente.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="window.print()">Imprimir Comprobante</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JS Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // Initialize DataTable
+        $('#transactionsTable').DataTable({
+            responsive: true,
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json'
+            }
+        });
+
+        // Toggle external recipient field based on transfer type
+        $('#transferType').change(function() {
+            if ($(this).val() === 'external') {
+                $('#externalRecipientDiv').removeClass('d-none');
+            } else {
+                $('#externalRecipientDiv').addClass('d-none');
+            }
+        });
+    });
+</script>
+</body>
+</html>

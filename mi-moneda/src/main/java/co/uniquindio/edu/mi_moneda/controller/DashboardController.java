@@ -19,6 +19,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import jakarta.servlet.http.HttpSession;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -118,6 +120,138 @@ public class DashboardController {
             return "dashboard";
         } catch (Exception e) {
             session.setAttribute("error", "Error al cargar el dashboard: " + e.getMessage());
+            return "redirect:/login-page";
+        }
+    }
+
+    /**
+     * LLeva hacia la ventana de wallets
+     */
+    @GetMapping("/wallets")
+    public String showWallets(HttpSession session, Model model) {
+        if (session.getAttribute("clienteId") == null) {
+            return "redirect:/login-page";
+        }
+
+        String clienteId = (String) session.getAttribute("clienteId");
+
+        try {
+            Cliente cliente = clienteService.buscarClientePorId(clienteId);
+            model.addAttribute("cliente", cliente);
+
+            return "wallets";
+        } catch (Exception e) {
+            session.invalidate();
+            return "redirect:/login-page";
+        }
+    }
+
+    /**
+     * LLeva hacia la ventana de transacciones
+     */
+    @GetMapping("/transactions")
+    public String showTransactions(HttpSession session, Model model) {
+        if (session.getAttribute("clienteId") == null) {
+            return "redirect:/login-page";
+        }
+
+        String clienteId = (String) session.getAttribute("clienteId");
+
+        try {
+            Cliente cliente = clienteService.buscarClientePorId(clienteId);
+            model.addAttribute("cliente", cliente);
+
+            return "transactions";
+        } catch (Exception e) {
+            session.invalidate();
+            return "redirect:/login-page";
+        }
+    }
+
+    /**
+     * LLeva hacia la ventana de programadas
+     */
+    @GetMapping("/scheduled")
+    public String showProgramadas(HttpSession session, Model model) {
+        if (session.getAttribute("clienteId") == null) {
+            return "redirect:/login-page";
+        }
+
+        String clienteId = (String) session.getAttribute("clienteId");
+
+        try {
+            Cliente cliente = clienteService.buscarClientePorId(clienteId);
+            model.addAttribute("cliente", cliente);
+
+            return "programadas";
+        } catch (Exception e) {
+            session.invalidate();
+            return "redirect:/login-page";
+        }
+    }
+
+    /**
+     * LLeva hacia la ventana de puntos
+     */
+    @GetMapping("/points")
+    public String showPuntos(HttpSession session, Model model) {
+        if (session.getAttribute("clienteId") == null) {
+            return "redirect:/login-page";
+        }
+
+        String clienteId = (String) session.getAttribute("clienteId");
+
+        try {
+            Cliente cliente = clienteService.buscarClientePorId(clienteId);
+            model.addAttribute("cliente", cliente);
+
+            return "puntos";
+        } catch (Exception e) {
+            session.invalidate();
+            return "redirect:/login-page";
+        }
+    }
+
+    /**
+     * LLeva hacia la ventana de analisis
+     */
+    @GetMapping("/analytics")
+    public String showAnalisis(HttpSession session, Model model) {
+        if (session.getAttribute("clienteId") == null) {
+            return "redirect:/login-page";
+        }
+
+        String clienteId = (String) session.getAttribute("clienteId");
+
+        try {
+            Cliente cliente = clienteService.buscarClientePorId(clienteId);
+            model.addAttribute("cliente", cliente);
+
+            return "analisis";
+        } catch (Exception e) {
+            session.invalidate();
+            return "redirect:/login-page";
+        }
+    }
+
+    /**
+     * LLeva hacia la ventana de mi perfil
+     */
+    @GetMapping("/profile")
+    public String showPerfil(HttpSession session, Model model) {
+        if (session.getAttribute("clienteId") == null) {
+            return "redirect:/login-page";
+        }
+
+        String clienteId = (String) session.getAttribute("clienteId");
+
+        try {
+            Cliente cliente = clienteService.buscarClientePorId(clienteId);
+            model.addAttribute("cliente", cliente);
+
+            return "perfil";
+        } catch (Exception e) {
+            session.invalidate();
             return "redirect:/login-page";
         }
     }

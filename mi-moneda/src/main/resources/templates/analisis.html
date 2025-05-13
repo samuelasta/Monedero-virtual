@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonederoApp - Análisis de Gastos</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2575fc;
+            --secondary-color: #6a11cb;
+        }
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            padding: 0.75rem 1rem;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .sidebar .nav-link i {
+            margin-right: 0.5rem;
+        }
+        .card {
+            border-radius: 1rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: none;
+            margin-bottom: 1.5rem;
+        }
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+        }
+        .nav-pills .nav-link.active {
+            background-color: var(--primary-color);
+        }
+        .nav-pills .nav-link {
+            color: var(--primary-color);
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(37, 117, 252, 0.25);
+        }
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-size: 1.5rem;
+        }
+        .stat-income {
+            background-color: rgba(25, 135, 84, 0.1);
+            color: #198754;
+        }
+        .stat-expense {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+        .stat-balance {
+            background-color: rgba(13, 110, 253, 0.1);
+            color: #0d6efd;
+        }
+        .stat-savings {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+        }
+        .category-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .category-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-size: 1.25rem;
+        }
+        .category-bar {
+            height: 8px;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+            <div class="position-sticky pt-3">
+                <div class="text-center mb-4">
+                    <h3 class="fw-bold">MonederoApp</h3>
+                    <i class="bi bi-wallet2 fs-1"></i>
+                </div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/wallets">
+                            <i class="bi bi-wallet"></i> Mis Monederos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/transactions">
+                            <i class="bi bi-arrow-left-right"></i> Transacciones
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/scheduled">
+                            <i class="bi bi-calendar-check"></i> Programadas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/points">
+                            <i class="bi bi-star"></i> Puntos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/analytics">
+                            <i class="bi bi-graph-up"></i> Análisis
+                        </a>
+                    </li>
+                    <li class="nav-item mt-5">
+                        <a class="nav-link" href="/profile">
+                            <i class="bi bi-person-circle"></i> Mi Perfil
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">
+                            <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+            <!-- Top Navigation -->
+            <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4 shadow-sm rounded-3">
+                <div class="container-fluid">
+                    <button class="navbar-toggler d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target=".sidebar">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="d-flex align-items-center">
+                        <h5 class="mb-0">Análisis de Gastos</h5>
+                    </div>
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item dropdown">
+                            <select class="form-select" id="periodSelect">
+                                <option value="month">Este Mes</option>
+                                <option value="quarter">Último Trimestre</option>
+                                <option value="year">Este Año</option>
+                                <option value="custom">Personalizado</option>
+                            </select>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Date Range Selector (Hidden by default) -->
+            <div class="card mb-4 d-none" id="dateRangeSelector">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <label for="startDate" class="form-label">Fecha Inicio</label>
+                            <input type="date" class="form-control" id="startDate">
+                        </div>
+                        <div class="col-md-5">
+                            <label for="endDate" class="form-label">Fecha Fin</label>
+                            <input type="date" class="form-control" id="endDate">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary w-100">Aplicar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row">
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <div class="card stat-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon stat-income">
+                                    <i class="bi bi-arrow-down"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-1">Ingresos Totales</h6>
+                                    <h4 class="mb-0">$4,000.00</h4>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-success">
+                                <i class="bi bi-arrow-up"></i> 12% vs. mes anterior
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <div class="card stat-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon stat-expense">
+                                    <i class="bi bi-arrow-up"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-1">Gastos Totales</h6>
+                                    <h4 class="mb-0">$2,500.00</h4>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-danger">
+                                <i class="bi bi-arrow-up"></i> 5% vs. mes anterior
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <div class="card stat-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon stat-balance">
+                                    <i class="bi bi-wallet2"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-1">Balance Neto</h6>
+                                    <h4 class="mb-0">$1,500.00</h4>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-success">
+                                <i class="bi bi-arrow-up"></i> 8% vs. mes anterior
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <div class="card stat-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon stat-savings">
+                                    <i class="bi bi-piggy-bank"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-1">Tasa de Ahorro</h6>
+                                    <h4 class="mb-0">37.5%</h4>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-success">
+                                <i class="bi bi-arrow-up"></i> 3% vs. mes anterior
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="row">
+                <!-- Income vs Expenses Chart -->
+                <div class="col-lg-8 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <i class="bi bi-bar-chart"></i> Ingresos vs Gastos
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="incomeExpensesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expense Categories Chart -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <i class="bi bi-pie-chart"></i> Categorías de Gastos
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="expenseCategoriesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Top Expense Categories -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <i class="bi bi-list-ol"></i> Principales Categorías de Gastos
+                        </div>
+                        <div class="card-body">
+                            <div class="category-item">
+                                <div class="category-icon" style="background-color: rgba(37, 117, 252, 0.1); color: #2575fc;">
+                                    <i class="bi bi-house"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="mb-0">Vivienda</h6>
+                                        <span>$750.00 (30%)</span>
+                                    </div>
+                                    <div class="progress category-bar">
+                                        <div class="progress-bar" role="progressbar" style="width: 30%; background-color: #2575fc;" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="category-item">
+                                <div class="category-icon" style="background-color: rgba(106, 17, 203, 0.1); color: #6a11cb;">
+                                    <i class="bi bi-cart"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="mb-0">Alimentación</h6>
+                                        <span>$500.00 (20%)</span>
+                                    </div>
+                                    <div class="progress category-bar">
+                                        <div class="progress-bar" role="progressbar" style="width: 20%; background-color: #6a11cb;" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="category-item">
+                                <div class="category-icon" style="background-color: rgba(253, 126, 20, 0.1); color: #fd7e14;">
+                                    <i class="bi bi-bus-front"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="mb-0">Transporte</h6>
+                                        <span>$375.00 (15%)</span>
+                                    </div>
+                                    <div class="progress category-bar">
+                                        <div class="progress-bar" role="progressbar" style="width: 15%; background-color: #fd7e14;" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="category-item">
+                                <div class="category-icon" style="background-color: rgba(32, 201, 151, 0.1); color: #20c997;">
+                                    <i class="bi bi-tv"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="mb-0">Entretenimiento</h6>
+                                        <span>$250.00 (10%)</span>
+                                    </div>
+                                    <div class="progress category-bar">
+                                        <div class="progress-bar" role="progressbar" style="width: 10%; background-color: #20c997;" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="category-item">
+                                <div class="category-icon" style="background-color: rgba(108, 117, 125, 0.1); color: #6c757d;">
+                                    <i class="bi bi-lightning"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="mb-0">Servicios</h6>
+                                        <span>$625.00 (25%)</span>
+                                    </div>
+                                    <div class="progress category-bar">
+                                        <div class="progress-bar" role="progressbar" style="width: 25%; background-color: #6c757d;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Spending Trends -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <i class="bi bi-graph-up"></i> Tendencias de Gasto
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="spendingTrendsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions by Wallet -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-wallet"></i> Transacciones por Monedero
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Monedero Principal</h5>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Ingresos:</span>
+                                        <span class="text-success">$3,500.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Gastos:</span>
+                                        <span class="text-danger">$2,000.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Balance:</span>
+                                        <span class="fw-bold">$1,500.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Monedero Ahorros</h5>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Ingresos:</span>
+                                        <span class="text-success">$500.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Gastos:</span>
+                                        <span class="text-danger">$0.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Balance:</span>
+                                        <span class="fw-bold">$500.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Monedero Gastos</h5>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Ingresos:</span>
+                                        <span class="text-success">$0.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Gastos:</span>
+                                        <span class="text-danger">$500.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Balance:</span>
+                                        <span class="fw-bold">-$500.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="walletTransactionsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Financial Insights -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-lightbulb"></i> Insights Financieros
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="alert alert-info" role="alert">
+                                <h5 class="alert-heading"><i class="bi bi-info-circle"></i> Gasto Elevado</h5>
+                                <p>Tu gasto en <strong>Entretenimiento</strong> aumentó un 20% respecto al mes anterior.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="alert alert-success" role="alert">
+                                <h5 class="alert-heading"><i class="bi bi-check-circle"></i> Ahorro Positivo</h5>
+                                <p>Has ahorrado un 37.5% de tus ingresos este mes, superando tu meta del 30%.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="alert alert-warning" role="alert">
+                                <h5 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Recordatorio</h5>
+                                <p>Tienes un pago programado de <strong>$800</strong> para mañana (Alquiler).</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Recomendaciones</h5>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item bg-transparent">Considera reducir gastos en entretenimiento para alcanzar tu meta de ahorro.</li>
+                                        <li class="list-group-item bg-transparent">Programa transferencias automáticas a tu monedero de ahorros para mantener la disciplina.</li>
+                                        <li class="list-group-item bg-transparent">Revisa tus suscripciones mensuales para identificar servicios que no utilizas.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JS Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Chart.js initialization -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Show/hide date range selector based on period selection
+        document.getElementById('periodSelect').addEventListener('change', function() {
+            if (this.value === 'custom') {
+                document.getElementById('dateRangeSelector').classList.remove('d-none');
+            } else {
+                document.getElementById('dateRangeSelector').classList.add('d-none');
+            }
+        });
+
+        // Income vs Expenses Chart
+        const incomeExpensesCtx = document.getElementById('incomeExpensesChart').getContext('2d');
+        const incomeExpensesChart = new Chart(incomeExpensesCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo'],
+                datasets: [
+                    {
+                        label: 'Ingresos',
+                        data: [3200, 3500, 3800, 3600, 4000],
+                        backgroundColor: '#2575fc',
+                        borderColor: '#2575fc',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Gastos',
+                        data: [2800, 2600, 2900, 2400, 2500],
+                        backgroundColor: '#dc3545',
+                        borderColor: '#dc3545',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Expense Categories Chart
+        const expenseCategoriesCtx = document.getElementById('expenseCategoriesChart').getContext('2d');
+        const expenseCategoriesChart = new Chart(expenseCategoriesCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Vivienda', 'Alimentación', 'Transporte', 'Entretenimiento', 'Servicios'],
+                datasets: [{
+                    data: [30, 20, 15, 10, 25],
+                    backgroundColor: [
+                        '#2575fc',
+                        '#6a11cb',
+                        '#fd7e14',
+                        '#20c997',
+                        '#6c757d'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Spending Trends Chart
+        const spendingTrendsCtx = document.getElementById('spendingTrendsChart').getContext('2d');
+        const spendingTrendsChart = new Chart(spendingTrendsCtx, {
+            type: 'line',
+            data: {
+                labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
+                datasets: [
+                    {
+                        label: 'Vivienda',
+                        data: [200, 180, 190, 180],
+                        borderColor: '#2575fc',
+                        backgroundColor: 'rgba(37, 117, 252, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Alimentación',
+                        data: [120, 140, 110, 130],
+                        borderColor: '#6a11cb',
+                        backgroundColor: 'rgba(106, 17, 203, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Transporte',
+                        data: [90, 100, 85, 100],
+                        borderColor: '#fd7e14',
+                        backgroundColor: 'rgba(253, 126, 20, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Wallet Transactions Chart
+        const walletTransactionsCtx = document.getElementById('walletTransactionsChart').getContext('2d');
+        const walletTransactionsChart = new Chart(walletTransactionsCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo'],
+                datasets: [
+                    {
+                        label: 'Monedero Principal',
+                        data: [1200, 1500, 1300, 1400, 1500],
+                        backgroundColor: '#2575fc'
+                    },
+                    {
+                        label: 'Monedero Ahorros',
+                        data: [400, 300, 500, 450, 500],
+                        backgroundColor: '#20c997'
+                    },
+                    {
+                        label: 'Monedero Gastos',
+                        data: [-300, -400, -350, -450, -500],
+                        backgroundColor: '#fd7e14'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true
+                    },
+                    y: {
+                        stacked: false,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+</body>
+</html>

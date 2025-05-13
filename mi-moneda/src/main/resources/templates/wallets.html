@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MonederoApp - Mis Monederos</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --primary-color: #2575fc;
+      --secondary-color: #6a11cb;
+    }
+    body {
+      background-color: #f8f9fa;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .sidebar {
+      background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      min-height: 100vh;
+      color: white;
+    }
+    .sidebar .nav-link {
+      color: rgba(255, 255, 255, 0.8);
+      border-radius: 0.5rem;
+      margin-bottom: 0.5rem;
+      padding: 0.75rem 1rem;
+    }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+    .sidebar .nav-link i {
+      margin-right: 0.5rem;
+    }
+    .card {
+      border-radius: 1rem;
+      box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+      border: none;
+      margin-bottom: 1.5rem;
+    }
+    .card-header {
+      background-color: white;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      font-weight: 600;
+    }
+    .wallet-card {
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .wallet-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    .wallet-primary {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: white;
+    }
+    .wallet-secondary {
+      background: linear-gradient(135deg, #20c997 0%, #0d6efd 100%);
+      color: white;
+    }
+    .wallet-tertiary {
+      background: linear-gradient(135deg, #fd7e14 0%, #dc3545 100%);
+      color: white;
+    }
+    .wallet-card .card-body {
+      padding: 1.5rem;
+    }
+    .wallet-number {
+      font-size: 1rem;
+      letter-spacing: 2px;
+      margin-bottom: 1.5rem;
+      opacity: 0.8;
+    }
+    .wallet-balance {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+    .wallet-actions {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+    }
+    .wallet-actions .btn {
+      background-color: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 0.5rem;
+    }
+    .wallet-actions .btn:hover {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+    .wallet-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+    .add-wallet-card {
+      border: 2px dashed #dee2e6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+      transition: all 0.3s ease;
+    }
+    .add-wallet-card:hover {
+      border-color: var(--primary-color);
+      background-color: rgba(37, 117, 252, 0.05);
+    }
+    .add-wallet-card i {
+      font-size: 3rem;
+      color: #6c757d;
+      margin-bottom: 1rem;
+    }
+    .add-wallet-card:hover i {
+      color: var(--primary-color);
+    }
+  </style>
+</head>
+<body>
+<div class="container-fluid">
+  <div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+      <div class="position-sticky pt-3">
+        <div class="text-center mb-4">
+          <h3 class="fw-bold">MonederoApp</h3>
+          <i class="bi bi-wallet2 fs-1"></i>
+        </div>
+        <ul class="nav flex-column">
+          <li class="nav-item">
+            <a class="nav-link" href="/dashboard">
+              <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="/wallets">
+              <i class="bi bi-wallet"></i> Mis Monederos
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/transactions">
+              <i class="bi bi-arrow-left-right"></i> Transacciones
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/scheduled">
+              <i class="bi bi-calendar-check"></i> Programadas
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/points">
+              <i class="bi bi-star"></i> Puntos
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/analytics">
+              <i class="bi bi-graph-up"></i> Análisis
+            </a>
+          </li>
+          <li class="nav-item mt-5">
+            <a class="nav-link" href="/profile">
+              <i class="bi bi-person-circle"></i> Mi Perfil
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/logout">
+              <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+      <!-- Top Navigation -->
+      <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4 shadow-sm rounded-3">
+        <div class="container-fluid">
+          <button class="navbar-toggler d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target=".sidebar">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="d-flex align-items-center">
+            <h5 class="mb-0">Mis Monederos</h5>
+          </div>
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newWalletModal">
+                <i class="bi bi-plus-lg"></i> Nuevo Monedero
+              </button>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <!-- Wallets Section -->
+      <div class="row">
+        <!-- Primary Wallet -->
+        <div class="col-md-6 col-lg-4 mb-4">
+          <div class="card wallet-card wallet-primary h-100" data-bs-toggle="modal" data-bs-target="#walletDetailsModal">
+            <div class="card-body position-relative">
+              <div class="wallet-actions">
+                <div class="d-flex">
+                  <button class="btn" title="Editar">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <div class="dropdown d-inline-block">
+                    <button class="btn" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                      <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton1">
+                      <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-down me-2"></i>Depositar</a></li>
+                      <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-up me-2"></i>Retirar</a></li>
+                      <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-left-right me-2"></i>Transferir</a></li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li><a class="dropdown-item" href="#"><i class="bi bi-trash me-2"></i>Eliminar</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <h6 class="card-subtitle mb-1">Monedero Principal</h6>
+              <div class="wallet-number">**** **** **** 1234</div>
+              <div class="wallet-balance">$5,250.00</div>
+              <div class="wallet-footer">
+                <div>Creado: 01/01/2023</div>
+                <div><i class="bi bi-check-circle-fill"></i> Activo</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Secondary Wallet -->
+        <div class="col-md-6 col-lg-4 mb-4">
+          <div class="card wallet-card wallet-secondary h-100" data-bs-toggle="modal" data-bs-target="#walletDetailsModal">
+            <div class="card-body position-relative">
+              <div class="wallet-actions">
+                <div class="d-flex">
+                  <button class="btn" title="Editar">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <div class="dropdown d-inline-block">
+                    <button class="btn" type="button" id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-expanded="false">
+                      <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton2">
+                      <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-down me-2"></i>Depositar</a></li>
+                      <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-up me-2"></i>Retirar</a></li>
+                      <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-left-right me-2"></i>Transferir</a></li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li><a class="dropdown-item" href="#"><i class="bi bi-trash me-2"></i>Eliminar</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <h6 class="card-subtitle mb-1">Monedero Ahorros</h6>
+              <div class="wallet-number">**** **** **** 5678</div>
+              <div class="wallet-balance">$2,800.00</div>
+              <div class="wallet-footer">
+                <div>Creado: 15/02/2023</div>
+                <div><i class="bi bi-check-circle-fill"></i> Activo</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tertiary Wallet -->
+        <div class="col-md-6 col-lg-4 mb-4">
+          <div class="card wallet-card wallet-tertiary h-100" data-bs-toggle="modal" data-bs-target="#walletDetailsModal">
+            <div class="card-body position-relative">
+              <div class="wallet-actions">
+                <div class="d-flex">
+                  <button class="btn" title="Editar">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <div class="dropdown d-inline-block">
+                    <button class="btn" type="button" id="dropdownMenuButton3" data-bs-toggle="dropdown" aria-expanded="false">
+                      <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton3">
+                      <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-down me-2"></i>Depositar</a></li>
+                      <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-up me-2"></i>Retirar</a></li>
+                      <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-left-right me-2"></i>Transferir</a></li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li><a class="dropdown-item" href="#"><i class="bi bi-trash me-2"></i>Eliminar</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <h6 class="card-subtitle mb-1">Monedero Gastos</h6>
+              <div class="wallet-number">**** **** **** 9012</div>
+              <div class="wallet-balance">$700.00</div>
+              <div class="wallet-footer">
+                <div>Creado: 10/03/2023</div>
+                <div><i class="bi bi-check-circle-fill"></i> Activo</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add New Wallet Card -->
+        <div class="col-md-6 col-lg-4 mb-4">
+          <div class="card add-wallet-card h-100" data-bs-toggle="modal" data-bs-target="#newWalletModal">
+            <i class="bi bi-plus-circle"></i>
+            <h6>Agregar Nuevo Monedero</h6>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Transactions for Wallets -->
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <i class="bi bi-clock-history"></i> Transacciones Recientes de Monederos
+          </div>
+          <a href="/transactions" class="btn btn-sm btn-outline-primary">Ver Todas</a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Monedero</th>
+                <th>Tipo</th>
+                <th>Descripción</th>
+                <th>Monto</th>
+                <th>Estado</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr>
+                <td>Hoy, 10:30 AM</td>
+                <td>Principal</td>
+                <td><span class="badge bg-success">Depósito</span></td>
+                <td>Depósito en efectivo</td>
+                <td class="text-success">+$500.00</td>
+                <td><span class="badge bg-success">Completada</span></td>
+              </tr>
+              <tr>
+                <td>Ayer, 3:45 PM</td>
+                <td>Principal</td>
+                <td><span class="badge bg-primary">Transferencia</span></td>
+                <td>Transferencia a María</td>
+                <td class="text-danger">-$150.00</td>
+                <td><span class="badge bg-success">Completada</span></td>
+              </tr>
+              <tr>
+                <td>15/04/2023, 5:20 PM</td>
+                <td>Gastos</td>
+                <td><span class="badge bg-danger">Retiro</span></td>
+                <td>Retiro en cajero</td>
+                <td class="text-danger">-$200.00</td>
+                <td><span class="badge bg-success">Completada</span></td>
+              </tr>
+              <tr>
+                <td>12/04/2023, 9:15 AM</td>
+                <td>Ahorros</td>
+                <td><span class="badge bg-success">Depósito</span></td>
+                <td>Transferencia desde Principal</td>
+                <td class="text-success">+$1,000.00</td>
+                <td><span class="badge bg-success">Completada</span></td>
+              </tr>
+              <tr>
+                <td>10/04/2023, 2:30 PM</td>
+                <td>Principal</td>
+                <td><span class="badge bg-primary">Transferencia</span></td>
+                <td>Transferencia a Ahorros</td>
+                <td class="text-danger">-$1,000.00</td>
+                <td><span class="badge bg-success">Completada</span></td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- New Wallet Modal -->
+<div class="modal fade" id="newWalletModal" tabindex="-1" aria-labelledby="newWalletModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="newWalletModalLabel">Crear Nuevo Monedero</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="newWalletForm">
+          <div class="mb-3">
+            <label for="walletName" class="form-label">Nombre del Monedero</label>
+            <input type="text" class="form-control" id="walletName" placeholder="Ej: Monedero de Viajes" required>
+          </div>
+          <div class="mb-3">
+            <label for="walletDescription" class="form-label">Descripción (Opcional)</label>
+            <textarea class="form-control" id="walletDescription" rows="2" placeholder="Breve descripción del propósito de este monedero"></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="initialBalance" class="form-label">Saldo Inicial</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input type="number" class="form-control" id="initialBalance" min="0" step="0.01" placeholder="0.00" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Tipo de Monedero</label>
+            <div class="d-flex gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="walletType" id="walletTypePersonal" value="personal" checked>
+                <label class="form-check-label" for="walletTypePersonal">
+                  Personal
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="walletType" id="walletTypeBusiness" value="business">
+                <label class="form-check-label" for="walletTypeBusiness">
+                  Negocio
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Color del Monedero</label>
+            <div class="d-flex gap-2">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="walletColor" id="colorBlue" value="blue" style="background-color: #2575fc;" checked>
+                <label class="form-check-label" for="colorBlue">
+                  Azul
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="walletColor" id="colorGreen" value="green" style="background-color: #20c997;">
+                <label class="form-check-label" for="colorGreen">
+                  Verde
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="walletColor" id="colorOrange" value="orange" style="background-color: #fd7e14;">
+                <label class="form-check-label" for="colorOrange">
+                  Naranja
+                </label>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" form="newWalletForm" class="btn btn-primary">Crear Monedero</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Wallet Details Modal -->
+<div class="modal fade" id="walletDetailsModal" tabindex="-1" aria-labelledby="walletDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="walletDetailsModalLabel">Detalles del Monedero</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="card wallet-primary mb-4">
+              <div class="card-body">
+                <h6 class="card-subtitle mb-1">Monedero Principal</h6>
+                <div class="wallet-number">**** **** **** 1234</div>
+                <div class="wallet-balance">$5,250.00</div>
+                <div class="wallet-footer">
+                  <div>Creado: 01/01/2023</div>
+                  <div><i class="bi bi-check-circle-fill"></i> Activo</div>
+                </div>
+              </div>
+            </div>
+            <div class="d-grid gap-2">
+              <button class="btn btn-outline-primary">
+                <i class="bi bi-arrow-down"></i> Depositar
+              </button>
+              <button class="btn btn-outline-primary">
+                <i class="bi bi-arrow-up"></i> Retirar
+              </button>
+              <button class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left-right"></i> Transferir
+              </button>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <h6>Últimas Transacciones</h6>
+            <div class="list-group">
+              <a href="#" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">Depósito</h6>
+                  <small class="text-success">+$500.00</small>
+                </div>
+                <p class="mb-1">Depósito en efectivo</p>
+                <small class="text-muted">Hoy, 10:30 AM</small>
+              </a>
+              <a href="#" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">Transferencia a María</h6>
+                  <small class="text-danger">-$150.00</small>
+                </div>
+                <p class="mb-1">Pago de deuda</p>
+                <small class="text-muted">Ayer, 3:45 PM</small>
+              </a>
+              <a href="#" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">Transferencia a Ahorros</h6>
+                  <small class="text-danger">-$1,000.00</small>
+                </div>
+                <p class="mb-1">Ahorro mensual</p>
+                <small class="text-muted">10/04/2023, 2:30 PM</small>
+              </a>
+            </div>
+            <div class="mt-3">
+              <a href="/transactions?wallet=1" class="btn btn-sm btn-link">Ver todas las transacciones</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-primary">Editar Monedero</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap 5 JS Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -27,35 +27,6 @@ public class AuthController {
         return "login";
     }
 
-    /**
-     * Procesa la solicitud de inicio de sesión
-     */
-    //@PostMapping("/login")
-    //public String processLogin(@RequestParam String email,
-                //               @RequestParam String password,
-               //                HttpSession session,
-               //                Model model) {
-        //System.out.println("Intento de login para: " + email);
-        //try {
-        //    System.out.println("Intento de login para: " + email);
-            // Intentar autenticar al cliente
-            //Cliente cliente = clienteService.autenticarCliente(email, password);
-
-            // Si la autenticación es exitosa, guardar el cliente en la sesión
-            //session.setAttribute("clienteId", cliente.getId());
-            //session.setAttribute("clienteNombre", cliente.getNombre());
-            //session.setAttribute("clienteEmail", cliente.getEmail());
-            //session.setAttribute("clienteRango", cliente.getRango());
-
-            // Redirigir al dashboard
-          //  return "redirect:/dashboard";
-        //} catch (Exception e) {
-          //  System.out.println("Intento de login para: " + email);
-            // Si hay un error, mostrar mensaje en la página de login
-        //    model.addAttribute("loginError", e.getMessage());
-      //      return "login";
-     //   }
-  //  }
 
     /**
      * Procesa la solicitud de registro de un nuevo cliente
