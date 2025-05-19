@@ -18,7 +18,7 @@ public class Beneficio {
 
     private String nombre;
     private String descripcion;
-    private int costePuntos;
+    private double costePuntos;
     private TipoBeneficio tipo;
     private double valor;
 }

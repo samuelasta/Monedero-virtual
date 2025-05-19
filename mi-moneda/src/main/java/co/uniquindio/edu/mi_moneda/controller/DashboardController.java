@@ -483,12 +483,12 @@ public class DashboardController {
     private Map<String, Object> calcularInfoRangos(Cliente cliente, Puntos puntos) {
         Map<String, Object> info = new HashMap<>();
 
-        int puntosActuales = puntos != null ? puntos.getPuntosAcumulados() : 0;
+        double puntosActuales = puntos != null ? puntos.getPuntosAcumulados() : 0;
         String rangoActual = cliente.getRango();
 
         // Determinar el siguiente rango y puntos necesarios
         String siguienteRango = "";
-        int puntosNecesarios = 0;
+        double puntosNecesarios = 0;
         double porcentaje = 0.0;
 
         if ("BRONCE".equals(rangoActual)) {

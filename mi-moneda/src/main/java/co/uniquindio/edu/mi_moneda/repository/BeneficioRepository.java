@@ -22,7 +22,7 @@ public interface BeneficioRepository extends MongoRepository<Beneficio, String> 
      * @param puntos La cantidad máxima de puntos
      * @return Lista de beneficios disponibles con el límite de puntos especificado
      */
-    List<Beneficio> findByCostePuntosLessThanEqual(int puntos);
+    List<Beneficio> findByCostePuntosLessThanEqual(double puntos);
 
     /**
      * Busca beneficios por nombre (ignorando mayúsculas/minúsculas)
