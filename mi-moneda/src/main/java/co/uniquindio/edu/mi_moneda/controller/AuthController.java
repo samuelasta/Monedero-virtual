@@ -1,6 +1,5 @@
 package co.uniquindio.edu.mi_moneda.controller;
 
-import co.uniquindio.edu.mi_moneda.model.Cliente;
 import co.uniquindio.edu.mi_moneda.services.interfaces.ClienteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -15,6 +14,7 @@ import java.util.UUID;
 
 @Controller
 public class AuthController {
+
 
     @Autowired
     private ClienteService clienteService;
@@ -53,6 +53,7 @@ public class AuthController {
             // Registrar el cliente
             clienteService.registrarCliente(id, fullName, email, password);
 
+
             // Mostrar mensaje de éxito y redirigir a la pestaña de login
             model.addAttribute("registrationSuccess", "Registro exitoso. Por favor inicia sesión.");
             return "login";
@@ -81,4 +82,6 @@ public class AuthController {
 
         return "redirect:/login-page";
     }
+
+
 }

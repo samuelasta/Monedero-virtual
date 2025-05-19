@@ -26,22 +26,22 @@ public class PuntosServiceImpl implements PuntosService {
     private PuntosRepository puntosRepository;
 
     @Override
-    public int calcularPuntosPorTransaccion(Transaccion transaccion) {
+    public double calcularPuntosPorTransaccion(Transaccion transaccion) {
         if(transaccion == null || !transaccion.isActiva()){
             return 0;
         }
         double monto = transaccion.getMonto();
         if(transaccion.getTipo() == TipoTransaccion.DEPOSITO){
-            return (int) (monto * 0.01);// el 1 % del monto de la transferencia
+            return (monto /100 ); // 1 punto por cada 100 unidades de moneda depositadas
         }
-        else if(transaccion.getTipo() == TipoTransaccion.TRANSFERENCIA){
-            return (int) (monto * 0.005);//el 0.5% del monto de la transferencia
+        else if(transaccion.getTipo() == TipoTransaccion.RETIRO){
+            return ((monto / 100) * 2); // 2 puntos por cada 100 unidades retiradas
         }
-        return 0;// los retiros no dan puntos
+        return ((monto / 100) * 3); // 3 puntos por cada 100 unidades transferidas
     }
 
     @Override
-    public boolean acumularPuntosCliente(Cliente cliente, int puntos, String motivo) {
+    public boolean acumularPuntosCliente(Cliente cliente, double puntos, String motivo) {
         if (cliente == null || puntos <= 0) {
             return false;
         }
@@ -133,15 +133,15 @@ public class PuntosServiceImpl implements PuntosService {
             return "BRONCE"; // Rango por defecto
         }
 
-        int puntosTotales = cliente.getPuntos().getPuntosAcumulados();
+        double puntosTotales = cliente.getPuntos().getPuntosAcumulados();
         String nuevoRango;
 
         // Lógica para determinar el rango según los puntos
-        if (puntosTotales < 1000) {
+        if (puntosTotales <= 500) {
             nuevoRango = "BRONCE";
-        } else if (puntosTotales < 5000) {
+        } else if (puntosTotales > 500 && puntosTotales <= 1000) {
             nuevoRango = "PLATA";
-        } else if (puntosTotales < 15000) {
+        } else if (puntosTotales > 1000 && puntosTotales <= 5000) {
             nuevoRango = "ORO";
         } else {
             nuevoRango = "PLATINO";

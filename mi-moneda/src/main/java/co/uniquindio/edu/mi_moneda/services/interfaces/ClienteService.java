@@ -32,5 +32,19 @@ public interface ClienteService {
      */
     Cliente buscarClientePorId(String id) throws Exception;
 
+    /**
+     * Busca un cliente por su email
+     * @param email Email del cliente
+     * @return Cliente encontrado
+     * @throws Exception Si no se encuentra el cliente
+     */
     Cliente buscarClientePorEmail(String email) throws Exception;
+
+    /**
+     * Busca un cliente por el número de cuenta de uno de sus monederos
+     * @param numeroCuenta Número de cuenta a buscar
+     * @return Cliente propietario del monedero con ese número de cuenta
+     * @throws Exception Si no se encuentra el monedero o el cliente
+     */
+    Cliente buscarClientePorNumeroCuenta(String numeroCuenta) throws Exception;
 }

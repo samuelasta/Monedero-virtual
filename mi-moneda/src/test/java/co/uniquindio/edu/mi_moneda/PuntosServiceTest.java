@@ -85,7 +85,7 @@ public class PuntosServiceTest {
     @Test
     void calcularPuntosPorTransaccion_Deposito() {
         // Ejecutar
-        int puntos = puntosService.calcularPuntosPorTransaccion(transaccion);
+        double puntos = puntosService.calcularPuntosPorTransaccion(transaccion);
 
         // Verificar
         assertEquals(10, puntos); // 1% de 1000
@@ -97,7 +97,7 @@ public class PuntosServiceTest {
         transaccion.setTipo(TipoTransaccion.RETIRO);
 
         // Ejecutar
-        int puntos = puntosService.calcularPuntosPorTransaccion(transaccion);
+        double puntos = puntosService.calcularPuntosPorTransaccion(transaccion);
 
         // Verificar
         assertEquals(0, puntos); // Los retiros no generan puntos

@@ -22,7 +22,7 @@ public class Puntos {
     // Esto evita la recursión infinita durante la serialización/deserialización ya que le dice a Jackson que no intente serializar nuevamente el objeto Cliente cuando está procesando un objeto Puntos.
     @JsonBackReference
     private Cliente cliente;
-    private int puntosAcumulados;
+    private double puntosAcumulados;
 
     private SimpleList<TransaccionPuntos> historialPuntos;
 

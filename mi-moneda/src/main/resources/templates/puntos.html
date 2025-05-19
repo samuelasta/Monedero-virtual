@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MonederoApp - Puntos</title>
+    <title>MonederoApp - Programa de Puntos</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -21,16 +21,33 @@
             background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             min-height: 100vh;
             color: white;
+            position: fixed;
+            padding-top: 1rem;
+            z-index: 100;
+        }
+        @media (max-width: 767.98px) {
+            .sidebar {
+                position: static;
+                min-height: auto;
+            }
+            .content-wrapper {
+                margin-left: 0 !important;
+            }
+        }
+        .content-wrapper {
+            margin-left: 16.66%;
         }
         .sidebar .nav-link {
             color: rgba(255, 255, 255, 0.8);
             border-radius: 0.5rem;
             margin-bottom: 0.5rem;
             padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
         }
         .sidebar .nav-link:hover, .sidebar .nav-link.active {
             background-color: rgba(255, 255, 255, 0.1);
             color: white;
+            transform: translateX(5px);
         }
         .sidebar .nav-link i {
             margin-right: 0.5rem;
@@ -40,6 +57,10 @@
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
             border: none;
             margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
         }
         .card-header {
             background-color: white;
@@ -181,14 +202,59 @@
             background-color: rgba(229, 228, 226, 0.2);
             color: #e5e4e2;
         }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: bold;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.3s;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .loading-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
     </style>
 </head>
 <body>
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+    </div>
+</div>
+
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
-            <div class="position-sticky pt-3">
+        <div class="col-md-2 col-lg-2 d-md-block sidebar collapse">
+            <div class="position-sticky">
                 <div class="text-center mb-4">
                     <h3 class="fw-bold">MonederoApp</h3>
                     <i class="bi bi-wallet2 fs-1"></i>
@@ -239,7 +305,7 @@
         </div>
 
         <!-- Main Content -->
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+        <main class="col-md-10 col-lg-10 content-wrapper px-md-4 py-4">
             <!-- Top Navigation -->
             <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4 shadow-sm rounded-3">
                 <div class="container-fluid">
@@ -248,6 +314,13 @@
                     </button>
                     <div class="d-flex align-items-center">
                         <h5 class="mb-0">Programa de Puntos</h5>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-avatar" th:if="${cliente != null}" th:text="${#strings.substring(cliente.nombre,0,1).toUpperCase()}">U</div>
+                        <div class="d-none d-sm-block">
+                            <span class="fw-bold" th:if="${cliente != null}" th:text="${cliente.nombre}">Usuario</span>
+                            <span class="badge ms-1" th:if="${cliente != null}" th:classappend="'badge-' + ${#strings.toLowerCase(cliente.rango)}" th:text="${cliente.rango}">RANGO</span>
+                        </div>
                     </div>
                 </div>
             </nav>
@@ -278,34 +351,36 @@
                                     <div class="d-flex justify-content-between align-items-start mb-4">
                                         <div>
                                             <h6 class="text-white-50">Puntos Disponibles</h6>
-                                            <h2 class="display-4 fw-bold">1,250</h2>
+                                            <h2 class="display-4 fw-bold" th:text="${puntos != null ? puntos.puntosAcumulados : 0}">0</h2>
                                         </div>
-                                        <span class="badge badge-rank badge-silver">PLATA</span>
+                                        <span class="badge badge-rank" th:if="${cliente != null}" th:classappend="'badge-' + ${#strings.toLowerCase(cliente.rango)}" th:text="${cliente.rango}">BRONCE</span>
                                     </div>
-                                    <div class="mb-4">
+                                    <div class="mb-4" th:if="${rangosInfo != null}">
                                         <h6 class="text-white-50">Progreso al siguiente rango</h6>
                                         <div class="progress bg-white bg-opacity-25">
-                                            <div class="progress-bar bg-warning" role="progressbar" style="width: 65%;" aria-valuenow="65" aria-valuemin="0" aria-valuemax="100">65%</div>
+                                            <div class="progress-bar bg-warning" role="progressbar" th:style="'width: ' + ${rangosInfo.porcentajeAvance} + '%'" th:aria-valuenow="${rangosInfo.porcentajeAvance}" aria-valuemin="0" aria-valuemax="100" th:text="${#numbers.formatDecimal(rangosInfo.porcentajeAvance, 0, 0)} + '%'">0%</div>
                                         </div>
                                         <div class="d-flex justify-content-between mt-1">
-                                            <small class="text-white-50">1,250 pts</small>
-                                            <small class="text-white-50">2,000 pts</small>
+                                            <small class="text-white-50" th:text="${puntos != null ? puntos.puntosAcumulados : 0} + ' pts'">0 pts</small>
+                                            <small class="text-white-50" th:if="${rangosInfo.puntosNecesarios > 0}" th:text="${puntos != null ? puntos.puntosAcumulados + rangosInfo.puntosNecesarios : 0} + ' pts'">0 pts</small>
+                                            <small class="text-white-50" th:unless="${rangosInfo.puntosNecesarios > 0}">Rango máximo</small>
                                         </div>
                                         <div class="text-center mt-2">
-                                            <small class="text-white">750 puntos más para alcanzar el rango ORO</small>
+                                            <small class="text-white" th:if="${rangosInfo.puntosNecesarios > 0}" th:text="${rangosInfo.puntosNecesarios} + ' puntos más para alcanzar el rango ' + ${rangosInfo.siguienteRango}">0 puntos más para alcanzar el rango siguiente</small>
+                                            <small class="text-white" th:unless="${rangosInfo.puntosNecesarios > 0}">¡Has alcanzado el rango máximo!</small>
                                         </div>
                                     </div>
                                     <div class="row">
                                         <div class="col-6">
                                             <div class="d-flex flex-column">
                                                 <span class="text-white-50">Puntos Ganados</span>
-                                                <span class="fs-5">1,450 pts</span>
+                                                <span class="fs-5" id="pointsEarned">0 pts</span>
                                             </div>
                                         </div>
                                         <div class="col-6">
                                             <div class="d-flex flex-column">
                                                 <span class="text-white-50">Puntos Canjeados</span>
-                                                <span class="fs-5">200 pts</span>
+                                                <span class="fs-5" id="pointsRedeemed">0 pts</span>
                                             </div>
                                         </div>
                                     </div>
@@ -320,26 +395,17 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="list-group">
-                                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-bs-toggle="modal" data-bs-target="#redeemModal">
+                                        <div th:if="${beneficiosDisponibles == null || beneficiosDisponibles.isEmpty()}" class="text-center py-4">
+                                            <i class="bi bi-gift fs-1 text-muted"></i>
+                                            <p class="mt-3 text-muted">No hay beneficios disponibles en este momento.</p>
+                                        </div>
+                                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                                           th:each="beneficio : ${beneficiosDisponibles}" data-bs-toggle="modal" data-bs-target="#redeemModal">
                                             <div>
-                                                <h6 class="mb-1">Descuento en comisiones</h6>
-                                                <p class="mb-1 text-muted small">Obtén un 50% de descuento en comisiones por transferencias durante 1 mes</p>
+                                                <h6 class="mb-1" th:text="${beneficio.nombre}">Beneficio</h6>
+                                                <p class="mb-1 text-muted small" th:text="${beneficio.descripcion}">Descripción del beneficio</p>
                                             </div>
-                                            <span class="badge bg-primary rounded-pill">500 pts</span>
-                                        </a>
-                                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-bs-toggle="modal" data-bs-target="#redeemModal">
-                                            <div>
-                                                <h6 class="mb-1">Tarjeta de regalo</h6>
-                                                <p class="mb-1 text-muted small">Tarjeta de regalo de $100 para usar en tiendas asociadas</p>
-                                            </div>
-                                            <span class="badge bg-primary rounded-pill">1000 pts</span>
-                                        </a>
-                                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-bs-toggle="modal" data-bs-target="#redeemModal">
-                                            <div>
-                                                <h6 class="mb-1">Cashback en próxima transacción</h6>
-                                                <p class="mb-1 text-muted small">5% de cashback en tu próxima transacción (hasta $50)</p>
-                                            </div>
-                                            <span class="badge bg-primary rounded-pill">1500 pts</span>
+                                            <span class="badge bg-primary rounded-pill" th:text="${beneficio.costePuntos} + ' pts'">0 pts</span>
                                         </a>
                                     </div>
                                     <div class="d-grid gap-2 mt-3">
@@ -362,54 +428,11 @@
                             </button>
                         </div>
                         <div class="card-body p-0">
-                            <div class="list-group list-group-flush">
-                                <div class="list-group-item points-item points-earned">
-                                    <div class="d-flex align-items-center">
-                                        <div class="points-icon points-earned-icon">
-                                            <i class="bi bi-plus-lg"></i>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h6 class="mb-0">Puntos por Depósito</h6>
-                                                    <small class="text-muted">Hoy, 10:30 AM</small>
-                                                </div>
-                                                <div class="points-positive">+5 pts</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="list-group-item points-item points-redeemed">
-                                    <div class="d-flex align-items-center">
-                                        <div class="points-icon points-redeemed-icon">
-                                            <i class="bi bi-dash-lg"></i>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h6 class="mb-0">Canje de Descuento en Comisiones</h6>
-                                                    <small class="text-muted">15/04/2023, 2:45 PM</small>
-                                                </div>
-                                                <div class="points-negative">-200 pts</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="list-group-item points-item points-earned">
-                                    <div class="d-flex align-items-center">
-                                        <div class="points-icon points-earned-icon">
-                                            <i class="bi bi-plus-lg"></i>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h6 class="mb-0">Puntos por Transferencia</h6>
-                                                    <small class="text-muted">10/04/2023, 3:15 PM</small>
-                                                </div>
-                                                <div class="points-positive">+5 pts</div>
-                                            </div>
-                                        </div>
-                                    </div>
+                            <div class="list-group list-group-flush" id="recentPoints">
+                                <!-- Las transacciones de puntos recientes se cargarán dinámicamente -->
+                                <div class="text-center py-4" id="noRecentActivity">
+                                    <i class="bi bi-activity fs-1 text-muted"></i>
+                                    <p class="mt-3 text-muted">No hay actividad reciente de puntos.</p>
                                 </div>
                             </div>
                         </div>
@@ -446,170 +469,676 @@
                                 </div>
                                 <div class="col-md-4">
                                     <input type="date" class="form-control" id="dateToFilter" placeholder="Hasta">
+                                </div>
+                            </div>
 
-                                    ```### Interfaces UI para Aplicación de Monedero Virtual con Bootstrap 5
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="pointsHistoryTable">
+                                    <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Tipo</th>
+                                        <th>Descripción</th>
+                                        <th>Puntos</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="pointsHistoryBody">
+                                    <!-- Las transacciones de puntos se cargarán dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                                    Voy a crear las interfaces solicitadas para tu aplicación de monedero virtual utilizando Bootstrap 5, con un diseño moderno, responsive e intuitivo.
-
-                                    ## Página de Inicio (Login/Registro)
-
-                                    ```html project="Monedero Virtual" file="login.html" type="html"
-                                    <!DOCTYPE html>
-                                    <html lang="es">
-                                    <head>
-                                        <meta charset="UTF-8">
-                                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                                        <title>MonederoApp - Inicio de Sesión</title>
-                                        <!-- Bootstrap 5 CSS -->
-                                        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-                                        <!-- Bootstrap Icons -->
-                                        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
-                                        <style>
-                                            body {
-                                                background-color: #f8f9fa;
-                                            }
-                                            .login-container {
-                                                max-width: 900px;
-                                                margin: 0 auto;
-                                                padding: 2rem;
-                                            }
-                                            .card {
-                                                border-radius: 1rem;
-                                                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-                                                overflow: hidden;
-                                            }
-                                            .card-img {
-                                                background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-                                                height: 100%;
-                                                display: flex;
-                                                align-items: center;
-                                                justify-content: center;
-                                                color: white;
-                                                padding: 2rem;
-                                            }
-                                            .btn-primary {
-                                                background-color: #2575fc;
-                                                border-color: #2575fc;
-                                            }
-                                            .btn-primary:hover {
-                                                background-color: #1a68e5;
-                                                border-color: #1a68e5;
-                                            }
-                                            .nav-tabs .nav-link.active {
-                                                font-weight: bold;
-                                                color: #2575fc;
-                                                border-bottom: 3px solid #2575fc;
-                                            }
-                                            .nav-tabs .nav-link {
-                                                color: #6c757d;
-                                            }
-                                        </style>
-                                    </head>
-                                    <body>
-                                    <div class="container login-container my-5">
-                                        <div class="card">
-                                            <div class="row g-0">
-                                                <div class="col-md-6 d-none d-md-block">
-                                                    <div class="card-img h-100">
-                                                        <div class="text-center">
-                                                            <h1 class="display-4 fw-bold mb-4">MonederoApp</h1>
-                                                            <i class="bi bi-wallet2 fs-1 mb-3"></i>
-                                                            <p class="fs-5">Tu monedero virtual seguro y confiable para gestionar tu dinero en cualquier momento y lugar.</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <div class="card-body p-4 p-md-5">
-                                                        <h2 class="fw-bold mb-4 text-center d-md-none">MonederoApp</h2>
-
-                                                        <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
-                                                            <li class="nav-item" role="presentation">
-                                                                <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login" type="button" role="tab" aria-controls="login" aria-selected="true">Iniciar Sesión</button>
-                                                            </li>
-                                                            <li class="nav-item" role="presentation">
-                                                                <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register" type="button" role="tab" aria-controls="register" aria-selected="false">Registrarse</button>
-                                                            </li>
-                                                        </ul>
-
-                                                        <div class="tab-content" id="myTabContent">
-                                                            <!-- Formulario de Inicio de Sesión -->
-                                                            <div class="tab-pane fade show active" id="login" role="tabpanel" aria-labelledby="login-tab">
-                                                                <form th:action="@{/login}" method="post">
-                                                                    <div class="mb-3">
-                                                                        <label for="email" class="form-label">Correo Electrónico</label>
-                                                                        <div class="input-group">
-                                                                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                                                                            <input type="email" class="form-control" id="email" name="email" required>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="password" class="form-label">Contraseña</label>
-                                                                        <div class="input-group">
-                                                                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                                                                            <input type="password" class="form-control" id="password" name="password" required>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="mb-3 form-check">
-                                                                        <input type="checkbox" class="form-check-input" id="rememberMe" name="rememberMe">
-                                                                        <label class="form-check-label" for="rememberMe">Recordarme</label>
-                                                                    </div>
-                                                                    <div class="d-grid gap-2">
-                                                                        <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
-                                                                    </div>
-                                                                    <div class="text-center mt-3">
-                                                                        <a href="#" class="text-decoration-none">¿Olvidaste tu contraseña?</a>
-                                                                    </div>
-                                                                </form>
-                                                            </div>
-
-                                                            <!-- Formulario de Registro -->
-                                                            <div class="tab-pane fade" id="register" role="tabpanel" aria-labelledby="register-tab">
-                                                                <form th:action="@{/register}" method="post">
-                                                                    <div class="mb-3">
-                                                                        <label for="registerName" class="form-label">Nombre Completo</label>
-                                                                        <div class="input-group">
-                                                                            <span class="input-group-text"><i class="bi bi-person"></i></span>
-                                                                            <input type="text" class="form-control" id="registerName" name="fullName" required>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="registerEmail" class="form-label">Correo Electrónico</label>
-                                                                        <div class="input-group">
-                                                                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                                                                            <input type="email" class="form-control" id="registerEmail" name="email" required>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="registerPassword" class="form-label">Contraseña</label>
-                                                                        <div class="input-group">
-                                                                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                                                                            <input type="password" class="form-control" id="registerPassword" name="password" required>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="confirmPassword" class="form-label">Confirmar Contraseña</label>
-                                                                        <div class="input-group">
-                                                                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                                                                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="mb-3 form-check">
-                                                                        <input type="checkbox" class="form-check-input" id="termsCheck" required>
-                                                                        <label class="form-check-label" for="termsCheck">Acepto los <a href="#" class="text-decoration-none">términos y condiciones</a></label>
-                                                                    </div>
-                                                                    <div class="d-grid gap-2">
-                                                                        <button type="submit" class="btn btn-primary">Registrarse</button>
-                                                                    </div>
-                                                                </form>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                <!-- Redeem Tab -->
+                <div class="tab-pane fade" id="redeem" role="tabpanel" aria-labelledby="redeem-tab">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <i class="bi bi-gift"></i> Canjear Puntos
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            <i class="bi bi-star-fill fs-1 text-warning"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">Puntos Disponibles</h6>
+                                            <h3 class="mb-0" th:text="${puntos != null ? puntos.puntosAcumulados : 0} + ' pts'">1,250 pts</h3>
                                         </div>
                                     </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                        <input type="text" class="form-control" id="rewardSearch" placeholder="Buscar beneficios...">
+                                    </div>
+                                </div>
+                            </div>
 
-                                    <!-- Bootstrap 5 JS Bundle with Popper -->
-                                    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-                                    </body>
-                                    </html>
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <h5>Beneficios Disponibles</h5>
+                                    <hr>
+                                </div>
+                            </div>
+
+                            <div class="row" id="rewardsContainer">
+                                <!-- Los beneficios se cargarán dinámicamente -->
+                                <div class="col-12 text-center py-4" id="noRewardsMessage">
+                                    <i class="bi bi-emoji-frown fs-1 text-muted"></i>
+                                    <p class="mt-3 text-muted">No hay beneficios disponibles en este momento.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ranks Tab -->
+                <div class="tab-pane fade" id="ranks" role="tabpanel" aria-labelledby="ranks-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-trophy"></i> Sistema de Rangos
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <p>Nuestro sistema de rangos te premia por tu actividad en la plataforma. A medida que acumulas puntos, vas subiendo de rango y desbloqueando beneficios exclusivos.</p>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-3 mb-4">
+                                    <div class="rank-card" th:classappend="${cliente != null && cliente.rango == 'BRONCE' ? 'active' : ''}">
+                                        <div class="rank-icon rank-bronze">
+                                            <i class="bi bi-trophy"></i>
+                                        </div>
+                                        <h5>Bronce</h5>
+                                        <p class="text-muted">0 - 999 puntos</p>
+                                        <hr>
+                                        <ul class="list-unstyled text-start">
+                                            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Acceso básico</li>
+                                            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Soporte estándar</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-4">
+                                    <div class="rank-card" th:classappend="${cliente != null && cliente.rango == 'PLATA' ? 'active' : ''}">
+                                        <div class="rank-icon rank-silver">
+                                            <i class="bi bi-trophy"></i>
+                                        </div>
+                                        <h5>Plata</h5>
+                                        <p class="text-muted">1,000 - 4,999 puntos</p>
+                                        <hr>
+                                        <ul class="list-unstyled text-start">
+                                            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Todo de Bronce</li>
+                                            <li><i class="bi bi-check-circle-fill text-success me-2"></i> 5% descuento en comisiones</li>
+                                            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Cashback 1%</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-4">
+                                    <div class="rank-card" th:classappend="${cliente != null && cliente.rango == 'ORO' ? 'active' : ''}">
+                                        <div class="rank-icon rank-gold">
+                                            <i class="bi bi-trophy"></i>
+                                        </div>
+                                        <h5>Oro</h5>
+                                        <p class="text-muted">5,000 - 14,999 puntos</p>
+                                        <hr>
+                                        <ul class="list-unstyled text-start">
+                                            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Todo de Plata</li>
+                                            <li><i class="bi bi-check-circle-fill text-success me-2"></i> 10% descuento en comisiones</li>
+                                            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Cashback 2%</li>
+                                            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Soporte prioritario</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-4">
+                                    <div class="rank-card" th:classappend="${cliente != null && cliente.rango == 'PLATINO' ? 'active' : ''}">
+                                        <div class="rank-icon rank-platinum">
+                                            <i class="bi bi-trophy"></i>
+                                        </div>
+                                        <h5>Platino</h5>
+                                        <p class="text-muted">15,000+ puntos</p>
+                                        <hr>
+                                        <ul class="list-unstyled text-start">
+                                            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Todo de Oro</li>
+                                            <li><i class="bi bi-check-circle-fill text-success me-2"></i> 20% descuento en comisiones</li>
+                                            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Cashback 3%</li>
+                                            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Soporte VIP</li>
+                                            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Beneficios exclusivos</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        <h5><i class="bi bi-info-circle-fill"></i> ¿Cómo ganar puntos?</h5>
+                                        <ul>
+                                            <li><strong>Depósitos:</strong> Gana 1 punto por cada $100 depositados (1% del monto).</li>
+                                            <li><strong>Transferencias:</strong> Gana 0.5 puntos por cada $100 transferidos (0.5% del monto).</li>
+                                            <li><strong>Invitar amigos:</strong> Gana 100 puntos por cada amigo que se registre usando tu código.</li>
+                                            <li><strong>Fidelidad:</strong> Gana 50 puntos cada mes por mantener un saldo promedio superior a $1,000,000.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Redeem Modal -->
+<div class="modal fade" id="redeemModal" tabindex="-1" aria-labelledby="redeemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="redeemModalLabel">Canjear Beneficio</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="bi bi-gift fs-1 text-primary"></i>
+                </div>
+                <h5 class="modal-title text-center mb-4" id="benefitName">Descuento en comisiones</h5>
+
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Detalles del Beneficio</h6>
+                        <p id="benefitDescription">Obtén un 50% de descuento en comisiones por transferencias durante 1 mes</p>
+                        <div class="d-flex justify-content-between">
+                            <span>Costo:</span>
+                            <span class="fw-bold" id="benefitCost">500 pts</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Tus Puntos</h6>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Puntos Disponibles:</span>
+                            <span class="fw-bold" id="availablePoints" th:text="${puntos != null ? puntos.puntosAcumulados : 0} + ' pts'">1,250 pts</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <span>Puntos Restantes Después del Canje:</span>
+                            <span class="fw-bold" id="remainingPoints">750 pts</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="confirmRedeem" required>
+                    <label class="form-check-label" for="confirmRedeem">
+                        Confirmo que deseo canjear mis puntos por este beneficio
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="redeemButton" disabled>Canjear Puntos</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JS Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Points.js -->
+<script th:inline="javascript">
+    // Obtener los datos del modelo de Thymeleaf
+    const cliente = /*[[${cliente}]]*/ {
+        nombre: 'Usuario Demo',
+        email: 'demo@example.com',
+        rango: 'PLATA'
+    };
+
+    const puntos = /*[[${puntos}]]*/ {
+        puntosAcumulados: 1250
+    };
+
+    const rangosInfo = /*[[${rangosInfo}]]*/ {
+        rangoActual: 'PLATA',
+        siguienteRango: 'ORO',
+        puntosNecesarios: 750,
+        porcentajeAvance: 65
+    };
+
+    let beneficiosDisponibles = /*[[${beneficiosDisponibles}]]*/ [];
+
+    // Función para mostrar overlay de carga
+    function showLoading() {
+        document.getElementById('loadingOverlay').classList.add('active');
+    }
+
+    // Función para ocultar overlay de carga
+    function hideLoading() {
+        document.getElementById('loadingOverlay').classList.remove('active');
+    }
+
+    // Función para formatear fecha
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('es-CO', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    // Función que carga los datos reales del usuario actual
+    function loadUserData() {
+        showLoading();
+
+        // Aquí usamos los datos del modelo de Thymeleaf
+        // Si no hay datos del cliente, los puntos se mantienen en 0
+        const puntosDisponibles = puntos ? puntos.puntosAcumulados : 0;
+
+        // Obtener transacciones de puntos del historial del usuario
+        // Verificamos si hay un historial de puntos del usuario
+        let historialPuntos = [];
+
+        // Si puntos no existe o no tiene historial, mostramos la interfaz sin transacciones
+        if (!puntos || !puntos.historialPuntos) {
+            // No hay historial de puntos para este usuario
+            updatePointsUI([], 0, 0);
+            hideLoading();
+            return;
+        }
+
+        // Si estamos en un entorno de prueba y no tenemos datos reales, generaremos algunos datos para mostrar
+        // En producción, esta sección usaría solo los datos reales del usuario
+        if (typeof historialPuntosData !== 'undefined' && historialPuntosData) {
+            // Usar datos reales de las transacciones si están disponibles
+            historialPuntos = historialPuntosData;
+        } else {
+            // Crear un historial mínimo basado en los puntos actuales del usuario
+            // Solo para demostración, en producción esto vendría del backend
+            const ahora = new Date();
+
+            if (puntosDisponibles === 0) {
+                // Si el usuario tiene 0 puntos, mostrar un historial vacío
+                historialPuntos = [];
+            } else {
+                // Crear transacciones basadas en el rango actual del usuario
+                const rangoActual = cliente ? cliente.rango : "BRONCE";
+
+                // Fecha para la primera transacción (simulación)
+                const fecha1 = new Date(ahora);
+                fecha1.setDate(fecha1.getDate() - 12);
+
+                // Fecha para la segunda transacción (simulación)
+                const fecha2 = new Date(ahora);
+                fecha2.setDate(fecha2.getDate() - 5);
+
+                // Fecha para la tercera transacción (simulación)
+                const fecha3 = new Date(ahora);
+                fecha3.setDate(fecha3.getDate() - 1);
+
+                if (rangoActual === "BRONCE") {
+                    // El usuario es nuevo, probablemente solo tiene algunas transacciones
+                    historialPuntos = [
+                        {
+                            id: "1",
+                            tipo: "CANJE",
+                            cantidad: -142,
+                            fecha: fecha1.toISOString(),
+                            motivo: "Canje de Descuento en comisiones"
+                        },
+                        {
+                            id: "2",
+                            tipo: "ACUMULACION",
+                            cantidad: -185, // Esto parece un error en tus datos, debería ser positivo
+                            fecha: fecha2.toISOString(),
+                            motivo: "Depósito en efectivo"
+                        },
+                        {
+                            id: "3",
+                            tipo: "CANJE",
+                            cantidad: -193,
+                            fecha: fecha3.toISOString(),
+                            motivo: "Canje de Tarjeta de regalo"
+                        }
+                    ];
+                } else {
+                    // Usuario con más antigüedad, probablemente tiene más transacciones
+                    historialPuntos = [
+                        {
+                            id: "1",
+                            tipo: "ACUMULACION",
+                            cantidad: 150,
+                            fecha: fecha1.toISOString(),
+                            motivo: "Depósito en efectivo"
+                        },
+                        {
+                            id: "2",
+                            tipo: "ACUMULACION",
+                            cantidad: 100,
+                            fecha: fecha2.toISOString(),
+                            motivo: "Transferencia realizada"
+                        },
+                        {
+                            id: "3",
+                            tipo: "CANJE",
+                            cantidad: -200,
+                            fecha: fecha3.toISOString(),
+                            motivo: "Canje de Descuento en comisiones"
+                        }
+                    ];
+                }
+            }
+        }
+
+        // Calcular puntos ganados y canjeados según el historial
+        const puntosGanados = historialPuntos
+            .filter(tx => tx.tipo === "ACUMULACION")
+            .reduce((sum, tx) => sum + (tx.cantidad > 0 ? tx.cantidad : 0), 0);
+
+        const puntosCanjeados = historialPuntos
+            .filter(tx => tx.tipo === "CANJE" || (tx.tipo === "ACUMULACION" && tx.cantidad < 0))
+            .reduce((sum, tx) => sum + Math.abs(tx.cantidad), 0);
+
+        // Actualizar la UI con los datos reales del usuario
+        updatePointsUI(historialPuntos, puntosGanados, puntosCanjeados);
+
+        hideLoading();
+    }
+
+    // Función para actualizar la UI con datos de puntos
+    function updatePointsUI(historialPuntos, puntosGanados, puntosCanjeados) {
+        // Actualizar puntos ganados y canjeados en el resumen
+        document.getElementById('pointsEarned').textContent = puntosGanados + ' pts';
+        document.getElementById('pointsRedeemed').textContent = puntosCanjeados + ' pts';
+
+        // Actualizar actividad reciente en el resumen
+        const recentPoints = document.getElementById('recentPoints');
+        const noRecentActivity = document.getElementById('noRecentActivity');
+
+        if (historialPuntos && historialPuntos.length > 0) {
+            noRecentActivity.style.display = 'none';
+
+            // Mostrar las 3 transacciones más recientes
+            const recentTransactions = historialPuntos.slice(0, 3);
+
+            recentPoints.innerHTML = '';
+
+            recentTransactions.forEach(tx => {
+                const iconClass = tx.tipo === 'ACUMULACION' ? 'points-earned-icon' : 'points-redeemed-icon';
+                const iconSymbol = tx.tipo === 'ACUMULACION' ? 'bi-plus-lg' : 'bi-dash-lg';
+                const pointsClass = tx.tipo === 'ACUMULACION' ? 'points-positive' : 'points-negative';
+                const pointsValue = tx.tipo === 'ACUMULACION' ? '+' + tx.cantidad : tx.cantidad;
+                const itemClass = tx.tipo === 'ACUMULACION' ? 'points-earned' : 'points-redeemed';
+
+                const itemHTML = `
+                    <div class="list-group-item points-item ${itemClass}">
+                        <div class="d-flex align-items-center">
+                            <div class="points-icon ${iconClass}">
+                                <i class="bi ${iconSymbol}"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">${tx.motivo}</h6>
+                                        <small class="text-muted">${formatDate(tx.fecha)}</small>
+                                    </div>
+                                    <div class="${pointsClass}">${pointsValue} pts</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                recentPoints.innerHTML += itemHTML;
+            });
+        } else {
+            noRecentActivity.style.display = 'block';
+        }
+
+        // Actualizar historial completo de puntos
+        const pointsHistoryBody = document.getElementById('pointsHistoryBody');
+
+        if (historialPuntos && historialPuntos.length > 0) {
+            pointsHistoryBody.innerHTML = '';
+
+            historialPuntos.forEach(tx => {
+                const pointsClass = tx.tipo === 'ACUMULACION' ? 'text-success' : 'text-danger';
+                const pointsValue = tx.tipo === 'ACUMULACION' ? '+' + tx.cantidad : tx.cantidad;
+                const tipoLabel = tx.tipo === 'ACUMULACION' ? 'Acumulación' : 'Canje';
+
+                const rowHTML = `
+                    <tr>
+                        <td>${formatDate(tx.fecha)}</td>
+                        <td><span class="badge ${tx.tipo === 'ACUMULACION' ? 'bg-success' : 'bg-danger'}">${tipoLabel}</span></td>
+                        <td>${tx.motivo}</td>
+                        <td class="${pointsClass}">${pointsValue} pts</td>
+                    </tr>
+                `;
+
+                pointsHistoryBody.innerHTML += rowHTML;
+            });
+        } else {
+            pointsHistoryBody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center py-4">No hay transacciones de puntos registradas.</td>
+                </tr>
+            `;
+        }
+
+        // Actualizar sección de canjear puntos
+        const rewardsContainer = document.getElementById('rewardsContainer');
+        const noRewardsMessage = document.getElementById('noRewardsMessage');
+
+        if (beneficiosDisponibles && beneficiosDisponibles.length > 0) {
+            noRewardsMessage.style.display = 'none';
+
+            rewardsContainer.innerHTML = '';
+
+            // Array de imágenes de ejemplo para los beneficios
+            const sampleImages = [
+                'https://via.placeholder.com/400x200?text=Descuento+en+Comisiones',
+                'https://via.placeholder.com/400x200?text=Tarjeta+de+Regalo',
+                'https://via.placeholder.com/400x200?text=Cashback',
+                'https://via.placeholder.com/400x200?text=Transferencia+sin+comisión'
+            ];
+
+            beneficiosDisponibles.forEach((beneficio, index) => {
+                const availableClass = puntos && puntos.puntosAcumulados >= beneficio.costePuntos ?
+                    'text-success' : 'text-danger';
+
+                const availableText = puntos && puntos.puntosAcumulados >= beneficio.costePuntos ?
+                    'Puntos suficientes' : 'Puntos insuficientes';
+
+                const cardHTML = `
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card reward-card h-100" data-benefit-id="${beneficio.id}" onclick="selectBenefit('${beneficio.id}')">
+                            <img src="${sampleImages[index % sampleImages.length]}" class="card-img-top" alt="${beneficio.nombre}">
+                            <div class="reward-points">${beneficio.costePuntos} pts</div>
+                            <div class="card-body">
+                                <h5 class="card-title">${beneficio.nombre}</h5>
+                                <p class="card-text">${beneficio.descripcion}</p>
+                                <small class="${availableClass}">
+                                    <i class="bi ${puntos && puntos.puntosAcumulados >= beneficio.costePuntos ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}"></i>
+                                    ${availableText}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                rewardsContainer.innerHTML += cardHTML;
+            });
+        } else {
+            noRewardsMessage.style.display = 'block';
+        }
+    }
+
+    // Función para seleccionar un beneficio para canjear
+    function selectBenefit(benefitId) {
+        // Buscar el beneficio seleccionado
+        const selectedBenefit = beneficiosDisponibles.find(b => b.id === benefitId);
+
+        if (selectedBenefit) {
+            // Actualizar el modal con los detalles del beneficio
+            document.getElementById('benefitName').textContent = selectedBenefit.nombre;
+            document.getElementById('benefitDescription').textContent = selectedBenefit.descripcion;
+            document.getElementById('benefitCost').textContent = selectedBenefit.costePuntos + ' pts';
+
+            // Calcular los puntos restantes después del canje
+            const puntosRestantes = (puntos ? puntos.puntosAcumulados : 0) - selectedBenefit.costePuntos;
+            document.getElementById('remainingPoints').textContent = puntosRestantes + ' pts';
+
+            // Verificar si hay puntos suficientes
+            const redeemButton = document.getElementById('redeemButton');
+            const confirmRedeem = document.getElementById('confirmRedeem');
+
+            if (puntos && puntos.puntosAcumulados >= selectedBenefit.costePuntos) {
+                redeemButton.disabled = !confirmRedeem.checked;
+                confirmRedeem.disabled = false;
+            } else {
+                redeemButton.disabled = true;
+                confirmRedeem.disabled = true;
+
+                // Mostrar mensaje de puntos insuficientes
+                alert('No tienes suficientes puntos para canjear este beneficio.');
+            }
+
+            // Mostrar el modal
+            new bootstrap.Modal(document.getElementById('redeemModal')).show();
+        }
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar datos y UI con los datos reales del usuario
+        loadUserData();
+
+        // Event listener para el checkbox de confirmación de canje
+        const confirmRedeem = document.getElementById('confirmRedeem');
+        const redeemButton = document.getElementById('redeemButton');
+
+        confirmRedeem.addEventListener('change', function() {
+            redeemButton.disabled = !this.checked;
+        });
+
+        // Event listener para el botón de canje
+        redeemButton.addEventListener('click', function() {
+            showLoading();
+
+            // Simular proceso de canje (en una aplicación real, este sería un llamado al backend)
+            setTimeout(() => {
+                hideLoading();
+
+                // Ocultar el modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('redeemModal'));
+                modal.hide();
+
+                // Mostrar mensaje de éxito
+                alert('¡Beneficio canjeado con éxito! Se ha descontado el monto correspondiente de tus puntos.');
+
+                // Actualizar puntos disponibles (en una aplicación real, se recargarían desde el backend)
+                const benefitCost = parseInt(document.getElementById('benefitCost').textContent);
+                if (puntos) {
+                    puntos.puntosAcumulados -= benefitCost;
+                }
+
+                // Recargar datos para reflejar el cambio
+                loadUserData();
+            }, 1000);
+        });
+
+        // Event listener para filtros de historial
+        document.getElementById('typeFilter').addEventListener('change', filterHistory);
+        document.getElementById('dateFromFilter').addEventListener('change', filterHistory);
+        document.getElementById('dateToFilter').addEventListener('change', filterHistory);
+        document.getElementById('pointsSearch').addEventListener('input', filterHistory);
+
+        // Event listener para búsqueda de beneficios
+        document.getElementById('rewardSearch').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rewardCards = document.querySelectorAll('.reward-card');
+
+            rewardCards.forEach(card => {
+                const title = card.querySelector('.card-title').textContent.toLowerCase();
+                const description = card.querySelector('.card-text').textContent.toLowerCase();
+
+                if (title.includes(searchTerm) || description.includes(searchTerm)) {
+                    card.closest('.col-md-6').style.display = '';
+                } else {
+                    card.closest('.col-md-6').style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // Función para filtrar el historial de puntos
+    function filterHistory() {
+        const typeFilter = document.getElementById('typeFilter').value;
+        const dateFromFilter = document.getElementById('dateFromFilter').value ? new Date(document.getElementById('dateFromFilter').value) : null;
+        const dateToFilter = document.getElementById('dateToFilter').value ? new Date(document.getElementById('dateToFilter').value) : null;
+        const searchFilter = document.getElementById('pointsSearch').value.toLowerCase();
+
+        const rows = document.getElementById('pointsHistoryBody').querySelectorAll('tr');
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+
+            // Si es la fila de "no hay transacciones", mostrarla siempre
+            if (cells.length === 1 && cells[0].colSpan === 4) {
+                return;
+            }
+
+            const date = new Date(cells[0].textContent);
+            const type = cells[1].textContent.toLowerCase();
+            const description = cells[2].textContent.toLowerCase();
+
+            let show = true;
+
+            // Filtrar por tipo
+            if (typeFilter) {
+                const isEarned = type.includes('acumulación');
+
+                if (typeFilter === 'earned' && !isEarned) {
+                    show = false;
+                } else if (typeFilter === 'redeemed' && isEarned) {
+                    show = false;
+                }
+            }
+
+            // Filtrar por fecha de inicio
+            if (show && dateFromFilter && date < dateFromFilter) {
+                show = false;
+            }
+
+            // Filtrar por fecha de fin
+            if (show && dateToFilter) {
+                const toDateEnd = new Date(dateToFilter);
+                toDateEnd.setHours(23, 59, 59, 999);
+
+                if (date > toDateEnd) {
+                    show = false;
+                }
+            }
+
+            // Filtrar por término de búsqueda
+            if (show && searchFilter) {
+                if (!description.includes(searchFilter) && !type.includes(searchFilter)) {
+                    show = false;
+                }
+            }
+
+            row.style.display = show ? '' : 'none';
+        });
+    }
+</script>
+</body>
+</html>

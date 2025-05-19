@@ -11,7 +11,7 @@ public interface PuntosService {
      * @param transaccion la transaccion que se está realizando
      * @return la cantidad de puntos generados
      */
-    int calcularPuntosPorTransaccion(Transaccion transaccion);
+    double calcularPuntosPorTransaccion(Transaccion transaccion);
 
     /**
      * Acumula puntos para un cliente específico
@@ -20,7 +20,7 @@ public interface PuntosService {
      * @param motivo El motivo por el que se acumulan los puntos
      * @return true si la operación fue exitosa, false en caso contrario
      */
-    boolean acumularPuntosCliente(Cliente cliente, int puntos, String motivo);
+    boolean acumularPuntosCliente(Cliente cliente, double puntos, String motivo);
 
     /**
      * Canjea puntos para un cliente en especifico

@@ -257,6 +257,92 @@ public class DashboardController {
     }
 
     /**
+     * LLeva hacia la ventana de transacciones
+     */
+    @GetMapping("/transactions/deposit")
+    public String showDeposit(HttpSession session, Model model) {
+        if (session.getAttribute("clienteId") == null) {
+            return "redirect:/login-page";
+        }
+
+        String clienteId = (String) session.getAttribute("clienteId");
+
+        try {
+            Cliente cliente = clienteService.buscarClientePorId(clienteId);
+            model.addAttribute("cliente", cliente);
+
+            return "transactions";
+        } catch (Exception e) {
+            session.invalidate();
+            return "redirect:/login-page";
+        }
+    }
+    /**
+     * LLeva hacia la ventana de transacciones
+     */
+    @GetMapping("/transactions/withdraw")
+    public String showRetiro(HttpSession session, Model model) {
+        if (session.getAttribute("clienteId") == null) {
+            return "redirect:/login-page";
+        }
+
+        String clienteId = (String) session.getAttribute("clienteId");
+
+        try {
+            Cliente cliente = clienteService.buscarClientePorId(clienteId);
+            model.addAttribute("cliente", cliente);
+
+            return "transactions";
+        } catch (Exception e) {
+            session.invalidate();
+            return "redirect:/login-page";
+        }
+    }
+    /**
+     * LLeva hacia la ventana de transacciones
+     */
+    @GetMapping("/transactions/transfer")
+    public String showTransferenciaView(HttpSession session, Model model) {
+        if (session.getAttribute("clienteId") == null) {
+            return "redirect:/login-page";
+        }
+
+        String clienteId = (String) session.getAttribute("clienteId");
+
+        try {
+            Cliente cliente = clienteService.buscarClientePorId(clienteId);
+            model.addAttribute("cliente", cliente);
+
+            return "transactions";
+        } catch (Exception e) {
+            session.invalidate();
+            return "redirect:/login-page";
+        }
+    }
+
+    /**
+     * LLeva hacia la ventana de puntos
+     */
+    @GetMapping("/points/redeem")
+    public String showPuntosView(HttpSession session, Model model) {
+        if (session.getAttribute("clienteId") == null) {
+            return "redirect:/login-page";
+        }
+
+        String clienteId = (String) session.getAttribute("clienteId");
+
+        try {
+            Cliente cliente = clienteService.buscarClientePorId(clienteId);
+            model.addAttribute("cliente", cliente);
+
+            return "puntos";
+        } catch (Exception e) {
+            session.invalidate();
+            return "redirect:/login-page";
+        }
+    }
+
+    /**
      * Calcula el balance total de todos los monederos
      */
     private double calcularBalanceTotal(Cliente cliente) {

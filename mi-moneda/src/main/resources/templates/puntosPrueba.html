@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonederoApp - Puntos</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #2575fc;
+            --secondary-color: #6a11cb;
+        }
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            padding: 0.75rem 1rem;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .sidebar .nav-link i {
+            margin-right: 0.5rem;
+        }
+        .card {
+            border-radius: 1rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: none;
+            margin-bottom: 1.5rem;
+        }
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+        }
+        .nav-pills .nav-link.active {
+            background-color: var(--primary-color);
+        }
+        .nav-pills .nav-link {
+            color: var(--primary-color);
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(37, 117, 252, 0.25);
+        }
+        .points-card {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+        }
+        .points-card .card-body {
+            padding: 2rem;
+        }
+        .badge-rank {
+            font-size: 0.8rem;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+        }
+        .badge-bronze {
+            background-color: #cd7f32;
+        }
+        .badge-silver {
+            background-color: #c0c0c0;
+        }
+        .badge-gold {
+            background-color: #ffd700;
+            color: #212529;
+        }
+        .badge-platinum {
+            background-color: #e5e4e2;
+            color: #212529;
+        }
+        .points-item {
+            border-left: 4px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .points-item:hover {
+            background-color: #f8f9fa;
+        }
+        .points-earned {
+            border-left-color: #198754;
+        }
+        .points-redeemed {
+            border-left-color: #dc3545;
+        }
+        .points-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+        }
+        .points-earned-icon {
+            background-color: rgba(25, 135, 84, 0.1);
+            color: #198754;
+        }
+        .points-redeemed-icon {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+        .points-positive {
+            color: #198754;
+            font-weight: 500;
+        }
+        .points-negative {
+            color: #dc3545;
+            font-weight: 500;
+        }
+        .reward-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            height: 100%;
+        }
+        .reward-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        .reward-card .card-img-top {
+            height: 160px;
+            object-fit: cover;
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+        }
+        .reward-points {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+        }
+        .rank-card {
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+        }
+        .rank-card.active {
+            transform: scale(1.05);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        .rank-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.5rem;
+        }
+        .rank-bronze {
+            background-color: rgba(205, 127, 50, 0.2);
+            color: #cd7f32;
+        }
+        .rank-silver {
+            background-color: rgba(192, 192, 192, 0.2);
+            color: #c0c0c0;
+        }
+        .rank-gold {
+            background-color: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+        }
+        .rank-platinum {
+            background-color: rgba(229, 228, 226, 0.2);
+            color: #e5e4e2;
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+            <div class="position-sticky pt-3">
+                <div class="text-center mb-4">
+                    <h3 class="fw-bold">MonederoApp</h3>
+                    <i class="bi bi-wallet2 fs-1"></i>
+                </div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/wallets">
+                            <i class="bi bi-wallet"></i> Mis Monederos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/transactions">
+                            <i class="bi bi-arrow-left-right"></i> Transacciones
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/scheduled">
+                            <i class="bi bi-calendar-check"></i> Programadas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/points">
+                            <i class="bi bi-star"></i> Puntos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/analytics">
+                            <i class="bi bi-graph-up"></i> Análisis
+                        </a>
+                    </li>
+                    <li class="nav-item mt-5">
+                        <a class="nav-link" href="/profile">
+                            <i class="bi bi-person-circle"></i> Mi Perfil
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">
+                            <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+            <!-- Top Navigation -->
+            <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4 shadow-sm rounded-3">
+                <div class="container-fluid">
+                    <button class="navbar-toggler d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target=".sidebar">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="d-flex align-items-center">
+                        <h5 class="mb-0">Programa de Puntos</h5>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Points Content -->
+            <ul class="nav nav-pills mb-4" id="pointsTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary" type="button" role="tab" aria-controls="summary" aria-selected="true">Resumen</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false">Historial</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="redeem-tab" data-bs-toggle="tab" data-bs-target="#redeem" type="button" role="tab" aria-controls="redeem" aria-selected="false">Canjear Puntos</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="ranks-tab" data-bs-toggle="tab" data-bs-target="#ranks" type="button" role="tab" aria-controls="ranks" aria-selected="false">Rangos</button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="pointsTabsContent">
+                <!-- Summary Tab -->
+                <div class="tab-pane fade show active" id="summary" role="tabpanel" aria-labelledby="summary-tab">
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="card points-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-4">
+                                        <div>
+                                            <h6 class="text-white-50">Puntos Disponibles</h6>
+                                            <h2 class="display-4 fw-bold">1,250</h2>
+                                        </div>
+                                        <span class="badge badge-rank badge-silver">PLATA</span>
+                                    </div>
+                                    <div class="mb-4">
+                                        <h6 class="text-white-50">Progreso al siguiente rango</h6>
+                                        <div class="progress bg-white bg-opacity-25">
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: 65%;" aria-valuenow="65" aria-valuemin="0" aria-valuemax="100">65%</div>
+                                        </div>
+                                        <div class="d-flex justify-content-between mt-1">
+                                            <small class="text-white-50">1,250 pts</small>
+                                            <small class="text-white-50">2,000 pts</small>
+                                        </div>
+                                        <div class="text-center mt-2">
+                                            <small class="text-white">750 puntos más para alcanzar el rango ORO</small>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="d-flex flex-column">
+                                                <span class="text-white-50">Puntos Ganados</span>
+                                                <span class="fs-5">1,450 pts</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="d-flex flex-column">
+                                                <span class="text-white-50">Puntos Canjeados</span>
+                                                <span class="fs-5">200 pts</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <i class="bi bi-gift"></i> Beneficios Disponibles
+                                </div>
+                                <div class="card-body">
+                                    <div class="list-group">
+                                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-bs-toggle="modal" data-bs-target="#redeemModal">
+                                            <div>
+                                                <h6 class="mb-1">Descuento en comisiones</h6>
+                                                <p class="mb-1 text-muted small">Obtén un 50% de descuento en comisiones por transferencias durante 1 mes</p>
+                                            </div>
+                                            <span class="badge bg-primary rounded-pill">500 pts</span>
+                                        </a>
+                                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-bs-toggle="modal" data-bs-target="#redeemModal">
+                                            <div>
+                                                <h6 class="mb-1">Tarjeta de regalo</h6>
+                                                <p class="mb-1 text-muted small">Tarjeta de regalo de $100 para usar en tiendas asociadas</p>
+                                            </div>
+                                            <span class="badge bg-primary rounded-pill">1000 pts</span>
+                                        </a>
+                                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-bs-toggle="modal" data-bs-target="#redeemModal">
+                                            <div>
+                                                <h6 class="mb-1">Cashback en próxima transacción</h6>
+                                                <p class="mb-1 text-muted small">5% de cashback en tu próxima transacción (hasta $50)</p>
+                                            </div>
+                                            <span class="badge bg-primary rounded-pill">1500 pts</span>
+                                        </a>
+                                    </div>
+                                    <div class="d-grid gap-2 mt-3">
+                                        <button class="btn btn-primary" onclick="document.getElementById('redeem-tab').click()">
+                                            Ver Todos los Beneficios
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-clock-history"></i> Actividad Reciente
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="document.getElementById('history-tab').click()">
+                                Ver Todo el Historial
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush">
+                                <div class="list-group-item points-item points-earned">
+                                    <div class="d-flex align-items-center">
+                                        <div class="points-icon points-earned-icon">
+                                            <i class="bi bi-plus-lg"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="mb-0">Puntos por Depósito</h6>
+                                                    <small class="text-muted">Hoy, 10:30 AM</small>
+                                                </div>
+                                                <div class="points-positive">+5 pts</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="list-group-item points-item points-redeemed">
+                                    <div class="d-flex align-items-center">
+                                        <div class="points-icon points-redeemed-icon">
+                                            <i class="bi bi-dash-lg"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="mb-0">Canje de Descuento en Comisiones</h6>
+                                                    <small class="text-muted">15/04/2023, 2:45 PM</small>
+                                                </div>
+                                                <div class="points-negative">-200 pts</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="list-group-item points-item points-earned">
+                                    <div class="d-flex align-items-center">
+                                        <div class="points-icon points-earned-icon">
+                                            <i class="bi bi-plus-lg"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="mb-0">Puntos por Transferencia</h6>
+                                                    <small class="text-muted">10/04/2023, 3:15 PM</small>
+                                                </div>
+                                                <div class="points-positive">+5 pts</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <i class="bi bi-clock-history"></i> Historial de Puntos
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                        <input type="text" class="form-control" id="pointsSearch" placeholder="Buscar...">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <select class="form-select" id="typeFilter">
+                                        <option value="">Todos los Tipos</option>
+                                        <option value="earned">Puntos Ganados</option>
+                                        <option value="redeemed">Puntos Canjeados</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="date" class="form-control" id="dateFromFilter" placeholder="Desde">
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="date" class="form-control" id="dateToFilter" placeholder="Hasta">
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Tipo</th>
+                                        <th>Descripción</th>
+                                        <th>Puntos</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr>
+                                        <td>01/05/2023 10:30 AM</td>
+                                        <td><span class="badge bg-success">Ganados</span></td>
+                                        <td>Puntos por depósito en efectivo</td>
+                                        <td class="points-positive">+5 pts</td>
+                                    </tr>
+                                    <tr>
+                                        <td>15/04/2023 2:45 PM</td>
+                                        <td><span class="badge bg-danger">Canjeados</span></td>
+                                        <td>Canje por descuento en comisiones</td>
+                                        <td class="points-negative">-200 pts</td>
+                                    </tr>
+                                    <tr>
+                                        <td>10/04/2023 3:15 PM</td>
+                                        <td><span class="badge bg-success">Ganados</span></td>
+                                        <td>Puntos por transferencia</td>
+                                        <td class="points-positive">+5 pts</td>
+                                    </tr>
+                                    <tr>
+                                        <td>05/04/2023 11:45 AM</td>
+                                        <td><span class="badge bg-success">Ganados</span></td>
+                                        <td>Puntos por depósito en efectivo</td>
+                                        <td class="points-positive">+10 pts</td>
+                                    </tr>
+                                    <tr>
+                                        <td>01/04/2023 9:00 AM</td>
+                                        <td><span class="badge bg-success">Ganados</span></td>
+                                        <td>Puntos por depósito de nómina</td>
+                                        <td class="points-positive">+25 pts</td>
+                                    </tr>
+                                    <tr>
+                                        <td>15/03/2023 2:00 PM</td>
+                                        <td><span class="badge bg-info">Corrección</span></td>
+                                        <td>Ajuste de puntos por error en transacción</td>
+                                        <td class="points-positive">+15 pts</td>
+                                    </tr>
+                                    <tr>
+                                        <td>10/03/2023 5:30 PM</td>
+                                        <td><span class="badge bg-success">Ganados</span></td>
+                                        <td>Puntos por transferencia</td>
+                                        <td class="points-positive">+8 pts</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Redeem Tab -->
+                <div class="tab-pane fade" id="redeem" role="tabpanel" aria-labelledby="redeem-tab">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card points-card">
+                                <div class="card-body">
+                                    <h6 class="text-white-50">Puntos Disponibles</h6>
+                                    <h2 class="display-4 fw-bold">1,250</h2>
+                                    <div class="mt-3">
+                                        <span class="badge badge-rank badge-silver">PLATA</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5>¿Cómo funcionan los puntos?</h5>
+                                    <p>Gana puntos con cada transacción:</p>
+                                    <ul>
+                                        <li>Depósitos: 1% del monto</li>
+                                        <li>Transferencias: 0.5% del monto</li>
+                                        <li>Canje: selecciona beneficios según tus puntos disponibles</li>
+                                    </ul>
+                                    <p>Los puntos acumulados determinan tu rango y los beneficios exclusivos a los que puedes acceder.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-4">Beneficios Disponibles</h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <div class="card reward-card">
+                                <img src="https://via.placeholder.com/400x160/2575fc/ffffff?text=Descuento" class="card-img-top" alt="Descuento en comisiones">
+                                <div class="reward-points">500 pts</div>
+                                <div class="card-body">
+                                    <h5 class="card-title">Descuento en comisiones</h5>
+                                    <p class="card-text">Obtén un 50% de descuento en comisiones por transferencias durante 1 mes.</p>
+                                    <div class="d-grid">
+                                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#redeemModal">Canjear</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="card reward-card">
+                                <img src="https://via.placeholder.com/400x160/6a11cb/ffffff?text=Tarjeta" class="card-img-top" alt="Tarjeta de regalo">
+                                <div class="reward-points">1000 pts</div>
+                                <div class="card-body">
+                                    <h5 class="card-title">Tarjeta de regalo</h5>
+                                    <p class="card-text">Tarjeta de regalo de $100 para usar en tiendas asociadas.</p>
+                                    <div class="d-grid">
+                                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#redeemModal">Canjear</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="card reward-card">
+                                <img src="https://via.placeholder.com/400x160/fd7e14/ffffff?text=Cashback" class="card-img-top" alt="Cashback">
+                                <div class="reward-points">1500 pts</div>
+                                <div class="card-body">
+                                    <h5 class="card-title">Cashback en próxima transacción</h5>
+                                    <p class="card-text">5% de cashback en tu próxima transacción (hasta $50).</p>
+                                    <div class="d-grid">
+                                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#redeemModal">Canjear</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="card reward-card">
+                                <img src="https://via.placeholder.com/400x160/20c997/ffffff?text=Membresía" class="card-img-top" alt="Membresía">
+                                <div class="reward-points">2000 pts</div>
+                                <div class="card-body">
+                                    <h5 class="card-title">Membresía Premium</h5>
+                                    <p class="card-text">Accede a beneficios exclusivos durante 3 meses.</p>
+                                    <div class="d-grid">
+                                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#redeemModal">Canjear</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ranks Tab -->
+                <div class="tab-pane fade" id="ranks" role="tabpanel" aria-labelledby="ranks-tab">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="mb-4">Sistema de Rangos</h5>
+                            <p>Tu rango se determina por la cantidad de puntos acumulados. A mayor rango, mayores beneficios y privilegios exclusivos.</p>
+
+                            <div class="progress mb-4">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: 65%;" aria-valuenow="65" aria-valuemin="0" aria-valuemax="100">1,250 pts</div>
+                            </div>
+
+                            <div class="row g-4">
+                                <div class="col-md-3">
+                                    <div class="card rank-card active">
+                                        <div class="rank-icon rank-bronze">
+                                            <i class="bi bi-trophy"></i>
+                                        </div>
+                                        <h5>BRONCE</h5>
+                                        <p class="mb-1">0 - 999 pts</p>
+                                        <span class="badge bg-secondary">Nivel Inicial</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card rank-card active">
+                                        <div class="rank-icon rank-silver">
+                                            <i class="bi bi-trophy-fill"></i>
+                                        </div>
+                                        <h5>PLATA</h5>
+                                        <p class="mb-1">1,000 - 4,999 pts</p>
+                                        <span class="badge bg-primary">Tu Rango Actual</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card rank-card">
+                                        <div class="rank-icon rank-gold">
+                                            <i class="bi bi-trophy-fill"></i>
+                                        </div>
+                                        <h5>ORO</h5>
+                                        <p class="mb-1">5,000 - 14,999 pts</p>
+                                        <span class="badge bg-secondary">Siguiente Nivel</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card rank-card">
+                                        <div class="rank-icon rank-platinum">
+                                            <i class="bi bi-trophy-fill"></i>
+                                        </div>
+                                        <h5>PLATINO</h5>
+                                        <p class="mb-1">15,000+ pts</p>
+                                        <span class="badge bg-secondary">Nivel Élite</span>
+                                    </div>
+                                </div>
+                            </div>

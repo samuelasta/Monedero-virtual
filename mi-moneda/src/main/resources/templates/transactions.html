@@ -252,85 +252,6 @@
                                             </button>
                                         </td>
                                     </tr>
-                                    <tr>
-                                        <td>TRX-002</td>
-                                        <td>30/04/2023 3:45 PM</td>
-                                        <td>Principal</td>
-                                        <td><span class="badge bg-primary">Transferencia</span></td>
-                                        <td>Transferencia a María</td>
-                                        <td class="amount-negative">-$150.00</td>
-                                        <td><span class="badge bg-success">Completada</span></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#transactionDetailsModal">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>TRX-003</td>
-                                        <td>15/04/2023 5:20 PM</td>
-                                        <td>Gastos</td>
-                                        <td><span class="badge bg-danger">Retiro</span></td>
-                                        <td>Retiro en cajero</td>
-                                        <td class="amount-negative">-$200.00</td>
-                                        <td><span class="badge bg-success">Completada</span></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#transactionDetailsModal">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>TRX-004</td>
-                                        <td>12/04/2023 9:15 AM</td>
-                                        <td>Ahorros</td>
-                                        <td><span class="badge bg-success">Depósito</span></td>
-                                        <td>Transferencia desde Principal</td>
-                                        <td class="amount-positive">+$1,000.00</td>
-                                        <td><span class="badge bg-success">Completada</span></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#transactionDetailsModal">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>TRX-005</td>
-                                        <td>10/04/2023 2:30 PM</td>
-                                        <td>Principal</td>
-                                        <td><span class="badge bg-primary">Transferencia</span></td>
-                                        <td>Transferencia a Ahorros</td>
-                                        <td class="amount-negative">-$1,000.00</td>
-                                        <td><span class="badge bg-success">Completada</span></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#transactionDetailsModal">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>TRX-006</td>
-                                        <td>05/04/2023 11:45 AM</td>
-                                        <td>Gastos</td>
-                                        <td><span class="badge bg-danger">Retiro</span></td>
-                                        <td>Compra en supermercado</td>
-                                        <td class="amount-negative">-$350.00</td>
-                                        <td><span class="badge bg-success">Completada</span></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#transactionDetailsModal">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>TRX-007</td>
-                                        <td>01/04/2023 9:00 AM</td>
-                                        <td>Principal</td>
-                                        <td><span class="badge bg-success">Depósito</span></td>
-                                        <td>Depósito de nómina</td>
-                                        <td class="amount-positive">+$2,500.00</td>
-                                        <td><span class="badge bg-success">Completada</span></td>
-                                        <td>
                                             <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#transactionDetailsModal">
                                                 <i class="bi bi-eye"></i>
                                             </button>
@@ -572,18 +493,9 @@
                             <option value="external">A otro usuario</option>
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label for="transferToWallet" class="form-label">Monedero Destino</label>
-                        <select class="form-select" id="transferToWallet" required>
-                            <option value="" selected disabled>Seleccionar monedero destino</option>
-                            <option value="1">Monedero Principal</option>
-                            <option value="2">Monedero Ahorros</option>
-                            <option value="3">Monedero Gastos</option>
-                        </select>
-                    </div>
                     <div class="mb-3 d-none" id="externalRecipientDiv">
-                        <label for="externalRecipient" class="form-label">ID o Correo del Destinatario</label>
-                        <input type="text" class="form-control" id="externalRecipient" placeholder="Ingrese ID o correo electrónico">
+                        <label for="externalRecipient" class="form-label">Numero de cuenta del destinatario</label>
+                        <input type="text" class="form-control" id="externalRecipient" placeholder="Ingrese el numero de cuenta">
                     </div>
                     <div class="mb-3">
                         <label for="transferAmount" class="form-label">Monto a Transferir</label>

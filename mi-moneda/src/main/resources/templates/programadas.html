@@ -246,17 +246,18 @@
                                 <div class="col-md-4">
                                     <select class="form-select" id="walletFilter">
                                         <option value="">Todos los Monederos</option>
-                                        <option value="1">Monedero Principal</option>
-                                        <option value="2">Monedero Ahorros</option>
-                                        <option value="3">Monedero Gastos</option>
+                                        <!-- Lista de monederos del cliente -->
+                                        <th:block th:if="${cliente.monederos != null}" th:each="monedero, iter : ${clienteMonederos}">
+                                            <option th:value="${monedero.id}" th:text="${monedero.nombre}">Monedero</option>
+                                        </th:block>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
                                     <select class="form-select" id="typeFilter">
                                         <option value="">Todos los Tipos</option>
-                                        <option value="deposit">Depósito</option>
-                                        <option value="withdraw">Retiro</option>
-                                        <option value="transfer">Transferencia</option>
+                                        <option value="DEPOSITO">Depósito</option>
+                                        <option value="RETIRO">Retiro</option>
+                                        <option value="TRANSFERENCIA">Transferencia</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
@@ -272,135 +273,78 @@
                             <!-- Upcoming Scheduled Transactions -->
                             <h6 class="mb-3">Próximas Transacciones</h6>
                             <div class="list-group mb-4">
-                                <div class="list-group-item scheduled-item scheduled-transfer position-relative" data-bs-toggle="modal" data-bs-target="#scheduledDetailsModal">
-                                    <div class="d-flex align-items-center">
-                                        <div class="transaction-icon transaction-transfer">
-                                            <i class="bi bi-arrow-right"></i>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h6 class="mb-0">Pago de Alquiler</h6>
-                                                    <small class="text-muted">Mañana, 9:00 AM • Monedero Principal</small>
+                                <!-- Si no hay transacciones programadas -->
+                                <div th:if="${#lists.isEmpty(transaccionesProgramadas)}" class="text-center p-3">
+                                    <p class="text-muted">No hay transacciones programadas pendientes.</p>
+                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newScheduledModal">
+                                        Programar nueva transacción
+                                    </button>
+                                </div>
+
+                                <!-- Lista de transacciones programadas pendientes -->
+                                <th:block th:if="${!#lists.isEmpty(transaccionesProgramadas)}" th:each="trans : ${transaccionesProgramadas}">
+                                    <div th:class="'list-group-item scheduled-item ' + ${trans.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).DEPOSITO ? 'scheduled-deposit' : (trans.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).RETIRO ? 'scheduled-withdraw' : 'scheduled-transfer')} + ' position-relative'"
+                                         th:data-id="${trans.id}"
+                                         data-bs-toggle="modal" data-bs-target="#scheduledDetailsModal">
+                                        <div class="d-flex align-items-center">
+                                            <div th:class="'transaction-icon ' + ${trans.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).DEPOSITO ? 'transaction-deposit' : (trans.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).RETIRO ? 'transaction-withdraw' : 'transaction-transfer')}">
+                                                <i th:class="'bi ' + ${trans.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).DEPOSITO ? 'bi-arrow-down' : (trans.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).RETIRO ? 'bi-arrow-up' : 'bi-arrow-right')}"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <h6 class="mb-0" th:text="${trans.descripcion}">Descripción</h6>
+                                                        <small class="text-muted">
+                                                            <span th:text="${#temporals.format(trans.fechaProgramada, 'dd/MM/yyyy, HH:mm')}">Fecha</span> •
+                                                            <span th:text="${trans.origen != null ? trans.origen.nombre : 'N/A'}">Monedero</span>
+                                                        </small>
+                                                    </div>
+                                                    <div th:class="${trans.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).DEPOSITO ? 'amount-positive' : 'amount-negative'}"
+                                                         th:text="${trans.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).DEPOSITO ? '+' : '-'} + '$' + ${#numbers.formatDecimal(trans.monto, 0, 'COMMA', 2, 'POINT')}">Monto</div>
                                                 </div>
-                                                <div class="amount-negative">-$800.00</div>
                                             </div>
                                         </div>
+                                        <i th:if="${trans.recurrente}" class="bi bi-arrow-repeat scheduled-recurring" th:title="${trans.periodoRecurrencia}"></i>
                                     </div>
-                                    <i class="bi bi-arrow-repeat scheduled-recurring" title="Mensual"></i>
-                                </div>
-                                <div class="list-group-item scheduled-item scheduled-transfer position-relative" data-bs-toggle="modal" data-bs-target="#scheduledDetailsModal">
-                                    <div class="d-flex align-items-center">
-                                        <div class="transaction-icon transaction-transfer">
-                                            <i class="bi bi-arrow-right"></i>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h6 class="mb-0">Transferencia a Carlos</h6>
-                                                    <small class="text-muted">20/05/2023, 3:00 PM • Monedero Principal</small>
-                                                </div>
-                                                <div class="amount-negative">-$250.00</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="list-group-item scheduled-item scheduled-deposit position-relative" data-bs-toggle="modal" data-bs-target="#scheduledDetailsModal">
-                                    <div class="d-flex align-items-center">
-                                        <div class="transaction-icon transaction-deposit">
-                                            <i class="bi bi-arrow-down"></i>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h6 class="mb-0">Depósito de Nómina</h6>
-                                                    <small class="text-muted">30/05/2023, 9:00 AM • Monedero Principal</small>
-                                                </div>
-                                                <div class="amount-positive">+$2,500.00</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <i class="bi bi-arrow-repeat scheduled-recurring" title="Mensual"></i>
-                                </div>
-                                <div class="list-group-item scheduled-item scheduled-withdraw position-relative" data-bs-toggle="modal" data-bs-target="#scheduledDetailsModal">
-                                    <div class="d-flex align-items-center">
-                                        <div class="transaction-icon transaction-withdraw">
-                                            <i class="bi bi-arrow-up"></i>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h6 class="mb-0">Pago de Servicios</h6>
-                                                    <small class="text-muted">05/06/2023, 10:00 AM • Monedero Gastos</small>
-                                                </div>
-                                                <div class="amount-negative">-$150.00</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <i class="bi bi-arrow-repeat scheduled-recurring" title="Mensual"></i>
-                                </div>
+                                </th:block>
                             </div>
 
                             <!-- Completed Scheduled Transactions -->
                             <h6 class="mb-3">Transacciones Completadas</h6>
                             <div class="list-group">
-                                <div class="list-group-item scheduled-item scheduled-transfer" data-bs-toggle="modal" data-bs-target="#scheduledDetailsModal">
-                                    <div class="d-flex align-items-center">
-                                        <div class="transaction-icon transaction-transfer">
-                                            <i class="bi bi-arrow-right"></i>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h6 class="mb-0">Pago de Alquiler</h6>
-                                                    <small class="text-muted">01/04/2023, 9:00 AM • Monedero Principal</small>
-                                                </div>
-                                                <div>
-                                                    <span class="amount-negative">-$800.00</span>
-                                                    <span class="badge bg-success ms-2">Completada</span>
+                                <!-- Si no hay transacciones completadas -->
+                                <div th:if="${#lists.isEmpty(transaccionesCompletadas)}" class="text-center p-3">
+                                    <p class="text-muted">No hay transacciones programadas completadas.</p>
+                                </div>
+
+                                <!-- Lista de transacciones programadas completadas -->
+                                <th:block th:if="${!#lists.isEmpty(transaccionesCompletadas)}" th:each="trans : ${transaccionesCompletadas}">
+                                    <div th:class="'list-group-item scheduled-item ' + ${trans.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).DEPOSITO ? 'scheduled-deposit' : (trans.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).RETIRO ? 'scheduled-withdraw' : 'scheduled-transfer')}"
+                                         th:data-id="${trans.id}"
+                                         data-bs-toggle="modal" data-bs-target="#scheduledDetailsModal">
+                                        <div class="d-flex align-items-center">
+                                            <div th:class="'transaction-icon ' + ${trans.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).DEPOSITO ? 'transaction-deposit' : (trans.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).RETIRO ? 'transaction-withdraw' : 'transaction-transfer')}">
+                                                <i th:class="'bi ' + ${trans.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).DEPOSITO ? 'bi-arrow-down' : (trans.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).RETIRO ? 'bi-arrow-up' : 'bi-arrow-right')}"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <h6 class="mb-0" th:text="${trans.descripcion}">Descripción</h6>
+                                                        <small class="text-muted">
+                                                            <span th:text="${#temporals.format(trans.fechaProgramada, 'dd/MM/yyyy, HH:mm')}">Fecha</span> •
+                                                            <span th:text="${trans.origen != null ? trans.origen.nombre : 'N/A'}">Monedero</span>
+                                                        </small>
+                                                    </div>
+                                                    <div>
+                                                        <span th:class="${trans.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).DEPOSITO ? 'amount-positive' : 'amount-negative'}"
+                                                              th:text="${trans.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).DEPOSITO ? '+' : '-'} + '$' + ${#numbers.formatDecimal(trans.monto, 0, 'COMMA', 2, 'POINT')}">Monto</span>
+                                                        <span class="badge bg-success ms-2">Completada</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="list-group-item scheduled-item scheduled-deposit" data-bs-toggle="modal" data-bs-target="#scheduledDetailsModal">
-                                    <div class="d-flex align-items-center">
-                                        <div class="transaction-icon transaction-deposit">
-                                            <i class="bi bi-arrow-down"></i>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h6 class="mb-0">Depósito de Nómina</h6>
-                                                    <small class="text-muted">30/04/2023, 9:00 AM • Monedero Principal</small>
-                                                </div>
-                                                <div>
-                                                    <span class="amount-positive">+$2,500.00</span>
-                                                    <span class="badge bg-success ms-2">Completada</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="list-group-item scheduled-item scheduled-withdraw" data-bs-toggle="modal" data-bs-target="#scheduledDetailsModal">
-                                    <div class="d-flex align-items-center">
-                                        <div class="transaction-icon transaction-withdraw">
-                                            <i class="bi bi-arrow-up"></i>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h6 class="mb-0">Pago de Servicios</h6>
-                                                    <small class="text-muted">05/04/2023, 10:00 AM • Monedero Gastos</small>
-                                                </div>
-                                                <div>
-                                                    <span class="amount-negative">-$150.00</span>
-                                                    <span class="badge bg-success ms-2">Completada</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                </th:block>
                             </div>
                         </div>
                     </div>
@@ -431,73 +375,85 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="newScheduledForm">
+                <form id="newScheduledForm" th:action="@{/scheduled/new}" method="post">
                     <div class="mb-3">
                         <label for="scheduledType" class="form-label">Tipo de Transacción</label>
-                        <select class="form-select" id="scheduledType" required>
+                        <select class="form-select" id="scheduledType" name="tipo" required>
                             <option value="" selected disabled>Seleccionar tipo</option>
-                            <option value="deposit">Depósito</option>
-                            <option value="withdraw">Retiro</option>
-                            <option value="transfer">Transferencia</option>
+                            <option value="DEPOSITO">Depósito</option>
+                            <option value="RETIRO">Retiro</option>
+                            <option value="TRANSFERENCIA">Transferencia</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="scheduledWallet" class="form-label">Monedero</label>
-                        <select class="form-select" id="scheduledWallet" required>
+                        <label for="scheduledWallet" class="form-label">Monedero Origen</label>
+                        <select class="form-select" id="scheduledWallet" name="origenId" required>
                             <option value="" selected disabled>Seleccionar monedero</option>
-                            <option value="1">Monedero Principal</option>
-                            <option value="2">Monedero Ahorros</option>
-                            <option value="3">Monedero Gastos</option>
+                            <!-- Lista de monederos del cliente -->
+                            <th:block th:if="${cliente.monederos != null}" th:each="monedero, iter : ${clienteMonederos}">
+                                <option th:value="${monedero.id}" th:text="${monedero.nombre} + ' - $' + ${#numbers.formatDecimal(monedero.saldo, 0, 'COMMA', 2, 'POINT')}">Monedero</option>
+                            </th:block>
                         </select>
                     </div>
                     <div class="mb-3 d-none" id="destinationWalletDiv">
                         <label for="destinationWallet" class="form-label">Monedero Destino</label>
-                        <select class="form-select" id="destinationWallet">
+                        <select class="form-select" id="destinationWallet" name="destinoId">
                             <option value="" selected disabled>Seleccionar monedero destino</option>
-                            <option value="1">Monedero Principal</option>
-                            <option value="2">Monedero Ahorros</option>
-                            <option value="3">Monedero Gastos</option>
+                            <!-- Lista de monederos del cliente -->
+                            <th:block th:if="${cliente.monederos != null}" th:each="monedero, iter : ${clienteMonederos}">
+                                <option th:value="${monedero.id}" th:text="${monedero.nombre} + ' - $' + ${#numbers.formatDecimal(monedero.saldo, 0, 'COMMA', 2, 'POINT')}">Monedero</option>
+                            </th:block>
                             <option value="external">Otro Usuario</option>
                         </select>
                     </div>
                     <div class="mb-3 d-none" id="externalRecipientDiv">
                         <label for="externalRecipient" class="form-label">ID o Correo del Destinatario</label>
-                        <input type="text" class="form-control" id="externalRecipient" placeholder="Ingrese ID o correo electrónico">
+                        <input type="text" class="form-control" id="externalRecipient" name="destinatarioExterno" placeholder="Ingrese ID o correo electrónico">
                     </div>
                     <div class="mb-3">
                         <label for="scheduledAmount" class="form-label">Monto</label>
                         <div class="input-group">
                             <span class="input-group-text">$</span>
-                            <input type="number" class="form-control" id="scheduledAmount" min="0.01" step="0.01" placeholder="0.00" required>
+                            <input type="number" class="form-control" id="scheduledAmount" name="monto" min="0.01" step="0.01" placeholder="0.00" required>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label for="scheduledDate" class="form-label">Fecha Programada</label>
-                        <input type="datetime-local" class="form-control" id="scheduledDate" required>
+                        <input type="datetime-local" class="form-control" id="scheduledDate" name="fechaProgramada" required>
                     </div>
                     <div class="mb-3">
                         <label for="scheduledRecurrence" class="form-label">Recurrencia</label>
-                        <select class="form-select" id="scheduledRecurrence">
-                            <option value="once">Una vez</option>
-                            <option value="daily">Diariamente</option>
-                            <option value="weekly">Semanalmente</option>
-                            <option value="monthly">Mensualmente</option>
+                        <select class="form-select" id="scheduledRecurrence" name="periodoRecurrencia">
+                            <option value="NONE">Una vez</option>
+                            <option value="DIARIO">Diariamente</option>
+                            <option value="SEMANAL">Semanalmente</option>
+                            <option value="MENSUAL">Mensualmente</option>
+                            <option value="ANUAL">Anualmente</option>
                         </select>
+                        <input type="hidden" id="recurrenteInput" name="recurrente" value="false">
                     </div>
                     <div class="mb-3">
                         <label for="scheduledDescription" class="form-label">Descripción</label>
-                        <textarea class="form-control" id="scheduledDescription" rows="2" placeholder="Descripción de la transacción programada"></textarea>
+                        <textarea class="form-control" id="scheduledDescription" name="descripcion" rows="2" placeholder="Descripción de la transacción programada"></textarea>
                     </div>
                     <div class="mb-3">
                         <label for="scheduledCategory" class="form-label">Categoría</label>
-                        <select class="form-select" id="scheduledCategory">
+                        <select class="form-select" id="scheduledCategory" name="categoria">
                             <option value="" selected disabled>Seleccionar categoría</option>
-                            <option value="housing">Vivienda</option>
-                            <option value="food">Alimentación</option>
-                            <option value="transport">Transporte</option>
-                            <option value="entertainment">Entretenimiento</option>
-                            <option value="services">Servicios</option>
-                            <option value="other">Otros</option>
+                            <option value="TRANSPORTE">Transporte</option>
+                            <option value="COMIDA">Alimentación</option>
+                            <option value="SALUD">Salud</option>
+                            <option value="ENTRETENIMIENTO">Entretenimiento</option>
+                            <option value="EDUCACION">Educación</option>
+                            <option value="OTROS">Otros</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="scheduledPriority" class="form-label">Prioridad</label>
+                        <select class="form-select" id="scheduledPriority" name="prioridad">
+                            <option value="1">Alta</option>
+                            <option value="2" selected>Media</option>
+                            <option value="3">Baja</option>
                         </select>
                     </div>
                 </form>
@@ -518,59 +474,22 @@
                 <h5 class="modal-title" id="scheduledDetailsModalLabel">Detalles de Transacción Programada</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <div class="d-flex align-items-center mb-4">
-                    <div class="transaction-icon transaction-transfer me-3">
-                        <i class="bi bi-arrow-right"></i>
+            <div class="modal-body" id="scheduledDetailsBody">
+                <!-- Contenido cargado dinámicamente -->
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
                     </div>
-                    <div>
-                        <h5 class="mb-0">Pago de Alquiler</h5>
-                        <span class="text-muted">Programada para: Mañana, 9:00 AM</span>
-                    </div>
-                    <div class="ms-auto">
-                        <span class="amount-negative fs-4">-$800.00</span>
-                    </div>
-                </div>
-
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h6 class="card-subtitle mb-2 text-muted">Información de la Transacción</h6>
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>ID de Programación:</span>
-                                <span class="fw-bold">SCH-001</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>Estado:</span>
-                                <span class="badge bg-warning">Pendiente</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>Monedero:</span>
-                                <span>Monedero Principal</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>Recurrencia:</span>
-                                <span>Mensual</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>Categoría:</span>
-                                <span>Vivienda</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-subtitle mb-2 text-muted">Notas</h6>
-                        <p>Pago mensual de alquiler al propietario. Se realiza el primer día de cada mes.</p>
-                    </div>
+                    <p class="mt-2">Cargando detalles...</p>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-danger me-auto">Cancelar Programación</button>
+                <form id="deleteScheduledForm" th:action="@{/scheduled/delete}" method="post" class="me-auto">
+                    <input type="hidden" id="deleteScheduledId" name="id">
+                    <button type="submit" class="btn btn-danger">Cancelar Programación</button>
+                </form>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary">Editar</button>
+                <a href="#" id="editScheduledLink" class="btn btn-primary">Editar</a>
             </div>
         </div>
     </div>
@@ -578,78 +497,25 @@
 
 <!-- Bootstrap 5 JS Bundle with Popper -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <!-- FullCalendar JS -->
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/main.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/locales-all.min.js"></script>
 
-<script>
+<script th:inline="javascript">
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize FullCalendar
-        const calendarEl = document.getElementById('scheduledCalendar');
-        const calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            locale: 'es',
-            headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: 'dayGridMonth,timeGridWeek,timeGridDay'
-            },
-            events: [
-                {
-                    title: 'Pago de Alquiler - $800',
-                    start: '2023-05-02T09:00:00',
-                    classNames: ['fc-event-transfer'],
-                    extendedProps: {
-                        type: 'transfer',
-                        description: 'Pago mensual de alquiler',
-                        amount: -800,
-                        wallet: 'Principal'
-                    }
-                },
-                {
-                    title: 'Transferencia a Carlos - $250',
-                    start: '2023-05-20T15:00:00',
-                    classNames: ['fc-event-transfer'],
-                    extendedProps: {
-                        type: 'transfer',
-                        description: 'Transferencia a Carlos',
-                        amount: -250,
-                        wallet: 'Principal'
-                    }
-                },
-                {
-                    title: 'Depósito de Nómina - $2,500',
-                    start: '2023-05-30T09:00:00',
-                    classNames: ['fc-event-deposit'],
-                    extendedProps: {
-                        type: 'deposit',
-                        description: 'Depósito mensual de nómina',
-                        amount: 2500,
-                        wallet: 'Principal'
-                    }
-                },
-                {
-                    title: 'Pago de Servicios - $150',
-                    start: '2023-06-05T10:00:00',
-                    classNames: ['fc-event-withdraw'],
-                    extendedProps: {
-                        type: 'withdraw',
-                        description: 'Pago mensual de servicios',
-                        amount: -150,
-                        wallet: 'Gastos'
-                    }
-                }
-            ],
-            eventClick: function(info) {
-                // Show modal with event details
-                $('#scheduledDetailsModal').modal('show');
-            }
+        // Configure recurrence selection
+        const recurrenceSelect = document.getElementById('scheduledRecurrence');
+        const recurrenteInput = document.getElementById('recurrenteInput');
+
+        recurrenceSelect.addEventListener('change', function() {
+            recurrenteInput.value = this.value !== 'NONE' ? 'true' : 'false';
         });
-        calendar.render();
 
         // Toggle destination wallet field based on transaction type
         $('#scheduledType').change(function() {
-            if ($(this).val() === 'transfer') {
+            if ($(this).val() === 'TRANSFERENCIA') {
                 $('#destinationWalletDiv').removeClass('d-none');
             } else {
                 $('#destinationWalletDiv').addClass('d-none');
@@ -665,6 +531,186 @@
                 $('#externalRecipientDiv').addClass('d-none');
             }
         });
+
+        // Initialize FullCalendar with real data
+        const calendarEl = document.getElementById('scheduledCalendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'es',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: /*[[${calendarEvents}]]*/ [],
+            eventClick: function(info) {
+                // Get transaction ID from event
+                const transId = info.event.extendedProps.transId;
+                loadTransactionDetails(transId);
+                $('#scheduledDetailsModal').modal('show');
+            }
+        });
+        calendar.render();
+
+        // Handle scheduled transaction item click to load details
+        $('.scheduled-item').on('click', function() {
+            const transId = $(this).data('id');
+            loadTransactionDetails(transId);
+        });
+
+        // Function to load transaction details
+        function loadTransactionDetails(transId) {
+            $('#deleteScheduledId').val(transId);
+            $('#editScheduledLink').attr('href', '/scheduled/edit/' + transId);
+
+            // Here you would typically fetch transaction details from the server
+            // For now, we'll use a simple approach to display pre-defined data
+            fetch('/scheduled/details/' + transId)
+                .then(response => response.json())
+                .then(data => {
+                    let iconClass = '';
+                    let iconType = '';
+
+                    if (data.tipo === 'DEPOSITO') {
+                        iconClass = 'transaction-deposit';
+                        iconType = 'bi-arrow-down';
+                    } else if (data.tipo === 'RETIRO') {
+                        iconClass = 'transaction-withdraw';
+                        iconType = 'bi-arrow-up';
+                    } else {
+                        iconClass = 'transaction-transfer';
+                        iconType = 'bi-arrow-right';
+                    }
+
+                    const amountClass = data.tipo === 'DEPOSITO' ? 'amount-positive' : 'amount-negative';
+                    const amountPrefix = data.tipo === 'DEPOSITO' ? '+' : '-';
+
+                    let html = `
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="transaction-icon ${iconClass} me-3">
+                                <i class="bi ${iconType}"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0">${data.descripcion}</h5>
+                                <span class="text-muted">Programada para: ${data.fechaFormateada}</span>
+                            </div>
+                            <div class="ms-auto">
+                                <span class="${amountClass} fs-4">${amountPrefix}${data.montoFormateado}</span>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Información de la Transacción</h6>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>ID de Programación:</span>
+                                        <span class="fw-bold">${data.id}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Estado:</span>
+                                        <span class="badge bg-warning">Pendiente</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Monedero Origen:</span>
+                                        <span>${data.origenNombre || 'N/A'}</span>
+                                    </li>`;
+
+                    if (data.tipo === 'TRANSFERENCIA') {
+                        html += `
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Monedero Destino:</span>
+                                <span>${data.destinoNombre || 'N/A'}</span>
+                            </li>`;
+                    }
+
+                    html += `
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Recurrencia:</span>
+                                        <span>${data.recurrente ? data.periodoRecurrencia : 'Una vez'}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Categoría:</span>
+                                        <span>${data.categoria || 'No especificada'}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Prioridad:</span>
+                                        <span>${data.prioridad === 1 ? 'Alta' : (data.prioridad === 2 ? 'Media' : 'Baja')}</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>`;
+
+                    if (data.descripcion) {
+                        html += `
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">Notas</h6>
+                                    <p>${data.descripcion}</p>
+                                </div>
+                            </div>`;
+                    }
+
+                    $('#scheduledDetailsBody').html(html);
+                })
+                .catch(error => {
+                    console.error('Error fetching transaction details:', error);
+                    $('#scheduledDetailsBody').html(`
+                        <div class="alert alert-danger">
+                            <h5><i class="bi bi-exclamation-triangle-fill"></i> Error</h5>
+                            <p>No se pudieron cargar los detalles de la transacción. Por favor, inténtelo de nuevo.</p>
+                        </div>
+                    `);
+                });
+        }
+
+        // Handle filter changes
+        $('#walletFilter, #typeFilter, #statusFilter').on('change', function() {
+            filterTransactions();
+        });
+
+        $('#scheduledSearch').on('input', function() {
+            filterTransactions();
+        });
+
+        function filterTransactions() {
+            const walletFilter = $('#walletFilter').val();
+            const typeFilter = $('#typeFilter').val();
+            const statusFilter = $('#statusFilter').val();
+            const searchText = $('#scheduledSearch').val().toLowerCase();
+
+            $('.scheduled-item').each(function() {
+                let show = true;
+
+                // Filtering logic would be here - for now, simple search filter
+                if (searchText && !$(this).text().toLowerCase().includes(searchText)) {
+                    show = false;
+                }
+
+                // Simple wallet filter
+                if (walletFilter && !$(this).find('.text-muted').text().includes(walletFilter)) {
+                    show = false;
+                }
+
+                // Simple type filter
+                if (typeFilter === 'deposit' && !$(this).hasClass('scheduled-deposit')) {
+                    show = false;
+                } else if (typeFilter === 'withdraw' && !$(this).hasClass('scheduled-withdraw')) {
+                    show = false;
+                } else if (typeFilter === 'transfer' && !$(this).hasClass('scheduled-transfer')) {
+                    show = false;
+                }
+
+                // Simple status filter
+                if (statusFilter === 'pending' && $(this).find('.badge').length > 0) {
+                    show = false;
+                } else if (statusFilter === 'completed' && $(this).find('.badge').length === 0) {
+                    show = false;
+                }
+
+                $(this).toggle(show);
+            });
+        }
     });
 </script>
 </body>

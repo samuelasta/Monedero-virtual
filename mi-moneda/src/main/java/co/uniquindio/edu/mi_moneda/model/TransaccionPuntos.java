@@ -22,7 +22,7 @@ public class TransaccionPuntos implements identificable{
     private String id;
 
     private TipoTransaccionPuntos tipo;
-    private int cantidad;
+    private double cantidad;
     private LocalDateTime fecha;
     private String motivo;
 

@@ -23,16 +23,36 @@
             background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             min-height: 100vh;
             color: white;
+            position: fixed;
+            padding-top: 1rem;
+            z-index: 100;
+        }
+        @media (max-width: 767.98px) {
+            .sidebar {
+                position: static;
+                min-height: auto;
+            }
+            .content-wrapper {
+                margin-left: 0 !important;
+            }
+            .chart-container {
+                height: 250px !important;
+            }
+        }
+        .content-wrapper {
+            margin-left: 16.66%;
         }
         .sidebar .nav-link {
             color: rgba(255, 255, 255, 0.8);
             border-radius: 0.5rem;
             margin-bottom: 0.5rem;
             padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
         }
         .sidebar .nav-link:hover, .sidebar .nav-link.active {
             background-color: rgba(255, 255, 255, 0.1);
             color: white;
+            transform: translateX(5px);
         }
         .sidebar .nav-link i {
             margin-right: 0.5rem;
@@ -42,6 +62,10 @@
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
             border: none;
             margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
         }
         .card-header {
             background-color: white;
@@ -116,14 +140,84 @@
             height: 300px;
             width: 100%;
         }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.3s;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .loading-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+        .alert-insight {
+            transition: all 0.3s ease;
+        }
+        .alert-insight:hover {
+            transform: scale(1.03);
+        }
+        .badge-rank {
+            font-size: 0.8rem;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+        }
+        .badge-bronze {
+            background-color: #cd7f32;
+        }
+        .badge-silver {
+            background-color: #c0c0c0;
+        }
+        .badge-gold {
+            background-color: #ffd700;
+            color: #212529;
+        }
+        .badge-platinum {
+            background-color: #e5e4e2;
+            color: #212529;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+    </div>
+</div>
+
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
-            <div class="position-sticky pt-3">
+        <div class="col-md-2 col-lg-2 d-md-block sidebar collapse">
+            <div class="position-sticky">
                 <div class="text-center mb-4">
                     <h3 class="fw-bold">MonederoApp</h3>
                     <i class="bi bi-wallet2 fs-1"></i>
@@ -174,7 +268,7 @@
         </div>
 
         <!-- Main Content -->
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+        <main class="col-md-10 col-lg-10 content-wrapper px-md-4 py-4">
             <!-- Top Navigation -->
             <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4 shadow-sm rounded-3">
                 <div class="container-fluid">
@@ -184,16 +278,23 @@
                     <div class="d-flex align-items-center">
                         <h5 class="mb-0">Análisis de Gastos</h5>
                     </div>
-                    <ul class="navbar-nav ms-auto">
-                        <li class="nav-item dropdown">
+                    <div class="d-flex">
+                        <div class="me-3">
                             <select class="form-select" id="periodSelect">
                                 <option value="month">Este Mes</option>
                                 <option value="quarter">Último Trimestre</option>
                                 <option value="year">Este Año</option>
                                 <option value="custom">Personalizado</option>
                             </select>
-                        </li>
-                    </ul>
+                        </div>
+                        <div class="user-info">
+                            <div class="user-avatar" th:text="${#strings.substring(cliente.nombre,0,1).toUpperCase()}">U</div>
+                            <div class="d-none d-sm-block">
+                                <span class="fw-bold" th:text="${cliente.nombre}">Usuario</span>
+                                <span class="badge ms-1" th:classappend="'badge-' + ${#strings.toLowerCase(cliente.rango)}" th:text="${cliente.rango}">RANGO</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </nav>
 
@@ -210,7 +311,7 @@
                             <input type="date" class="form-control" id="endDate">
                         </div>
                         <div class="col-md-2 d-flex align-items-end">
-                            <button class="btn btn-primary w-100">Aplicar</button>
+                            <button class="btn btn-primary w-100" id="applyDateRange">Aplicar</button>
                         </div>
                     </div>
                 </div>
@@ -218,7 +319,7 @@
 
             <!-- Statistics Cards -->
             <div class="row">
-                <div class="col-md-6 col-lg-3 mb-4">
+                <div class="col-sm-6 col-lg-3 mb-4">
                     <div class="card stat-card h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
@@ -227,16 +328,16 @@
                                 </div>
                                 <div>
                                     <h6 class="text-muted mb-1">Ingresos Totales</h6>
-                                    <h4 class="mb-0">$4,000.00</h4>
+                                    <h4 class="mb-0" id="totalIncome">$0.00</h4>
                                 </div>
                             </div>
-                            <div class="mt-3 text-success">
-                                <i class="bi bi-arrow-up"></i> 12% vs. mes anterior
+                            <div class="mt-3" id="incomeCompared">
+                                <i class="bi bi-arrow-up text-success"></i> <span class="text-success">0%</span> vs. período anterior
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6 col-lg-3 mb-4">
+                <div class="col-sm-6 col-lg-3 mb-4">
                     <div class="card stat-card h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
@@ -245,16 +346,16 @@
                                 </div>
                                 <div>
                                     <h6 class="text-muted mb-1">Gastos Totales</h6>
-                                    <h4 class="mb-0">$2,500.00</h4>
+                                    <h4 class="mb-0" id="totalExpense">$0.00</h4>
                                 </div>
                             </div>
-                            <div class="mt-3 text-danger">
-                                <i class="bi bi-arrow-up"></i> 5% vs. mes anterior
+                            <div class="mt-3" id="expenseCompared">
+                                <i class="bi bi-arrow-up text-danger"></i> <span class="text-danger">0%</span> vs. período anterior
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6 col-lg-3 mb-4">
+                <div class="col-sm-6 col-lg-3 mb-4">
                     <div class="card stat-card h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
@@ -263,16 +364,16 @@
                                 </div>
                                 <div>
                                     <h6 class="text-muted mb-1">Balance Neto</h6>
-                                    <h4 class="mb-0">$1,500.00</h4>
+                                    <h4 class="mb-0" id="netBalance">$0.00</h4>
                                 </div>
                             </div>
-                            <div class="mt-3 text-success">
-                                <i class="bi bi-arrow-up"></i> 8% vs. mes anterior
+                            <div class="mt-3" id="balanceCompared">
+                                <i class="bi bi-arrow-up text-success"></i> <span class="text-success">0%</span> vs. período anterior
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6 col-lg-3 mb-4">
+                <div class="col-sm-6 col-lg-3 mb-4">
                     <div class="card stat-card h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
@@ -281,11 +382,11 @@
                                 </div>
                                 <div>
                                     <h6 class="text-muted mb-1">Tasa de Ahorro</h6>
-                                    <h4 class="mb-0">37.5%</h4>
+                                    <h4 class="mb-0" id="savingsRate">0%</h4>
                                 </div>
                             </div>
-                            <div class="mt-3 text-success">
-                                <i class="bi bi-arrow-up"></i> 3% vs. mes anterior
+                            <div class="mt-3" id="savingsCompared">
+                                <i class="bi bi-arrow-up text-success"></i> <span class="text-success">0%</span> vs. período anterior
                             </div>
                         </div>
                     </div>
@@ -297,8 +398,15 @@
                 <!-- Income vs Expenses Chart -->
                 <div class="col-lg-8 mb-4">
                     <div class="card h-100">
-                        <div class="card-header">
-                            <i class="bi bi-bar-chart"></i> Ingresos vs Gastos
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-bar-chart"></i> Ingresos vs Gastos
+                            </div>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-primary active" data-view="monthly">Mensual</button>
+                                <button type="button" class="btn btn-outline-primary" data-view="weekly">Semanal</button>
+                                <button type="button" class="btn btn-outline-primary" data-view="daily">Diario</button>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div class="chart-container">
@@ -311,8 +419,20 @@
                 <!-- Expense Categories Chart -->
                 <div class="col-lg-4 mb-4">
                     <div class="card h-100">
-                        <div class="card-header">
-                            <i class="bi bi-pie-chart"></i> Categorías de Gastos
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-pie-chart"></i> Categorías de Gastos
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-download"></i> Exportar
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                                    <li><a class="dropdown-item" href="#" id="exportPNG">PNG</a></li>
+                                    <li><a class="dropdown-item" href="#" id="exportPDF">PDF</a></li>
+                                    <li><a class="dropdown-item" href="#" id="exportCSV">CSV</a></li>
+                                </ul>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div class="chart-container">
@@ -330,77 +450,8 @@
                         <div class="card-header">
                             <i class="bi bi-list-ol"></i> Principales Categorías de Gastos
                         </div>
-                        <div class="card-body">
-                            <div class="category-item">
-                                <div class="category-icon" style="background-color: rgba(37, 117, 252, 0.1); color: #2575fc;">
-                                    <i class="bi bi-house"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between">
-                                        <h6 class="mb-0">Vivienda</h6>
-                                        <span>$750.00 (30%)</span>
-                                    </div>
-                                    <div class="progress category-bar">
-                                        <div class="progress-bar" role="progressbar" style="width: 30%; background-color: #2575fc;" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="category-item">
-                                <div class="category-icon" style="background-color: rgba(106, 17, 203, 0.1); color: #6a11cb;">
-                                    <i class="bi bi-cart"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between">
-                                        <h6 class="mb-0">Alimentación</h6>
-                                        <span>$500.00 (20%)</span>
-                                    </div>
-                                    <div class="progress category-bar">
-                                        <div class="progress-bar" role="progressbar" style="width: 20%; background-color: #6a11cb;" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="category-item">
-                                <div class="category-icon" style="background-color: rgba(253, 126, 20, 0.1); color: #fd7e14;">
-                                    <i class="bi bi-bus-front"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between">
-                                        <h6 class="mb-0">Transporte</h6>
-                                        <span>$375.00 (15%)</span>
-                                    </div>
-                                    <div class="progress category-bar">
-                                        <div class="progress-bar" role="progressbar" style="width: 15%; background-color: #fd7e14;" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="category-item">
-                                <div class="category-icon" style="background-color: rgba(32, 201, 151, 0.1); color: #20c997;">
-                                    <i class="bi bi-tv"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between">
-                                        <h6 class="mb-0">Entretenimiento</h6>
-                                        <span>$250.00 (10%)</span>
-                                    </div>
-                                    <div class="progress category-bar">
-                                        <div class="progress-bar" role="progressbar" style="width: 10%; background-color: #20c997;" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="category-item">
-                                <div class="category-icon" style="background-color: rgba(108, 117, 125, 0.1); color: #6c757d;">
-                                    <i class="bi bi-lightning"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between">
-                                        <h6 class="mb-0">Servicios</h6>
-                                        <span>$625.00 (25%)</span>
-                                    </div>
-                                    <div class="progress category-bar">
-                                        <div class="progress-bar" role="progressbar" style="width: 25%; background-color: #6c757d;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="card-body" id="topCategoriesContainer">
+                            <!-- Las categorías se cargarán dinámicamente aquí -->
                         </div>
                     </div>
                 </div>
@@ -408,8 +459,18 @@
                 <!-- Spending Trends -->
                 <div class="col-md-6 mb-4">
                     <div class="card h-100">
-                        <div class="card-header">
-                            <i class="bi bi-graph-up"></i> Tendencias de Gasto
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-graph-up"></i> Tendencias de Gasto
+                            </div>
+                            <select class="form-select form-select-sm" style="width: auto;" id="trendCategoryFilter">
+                                <option value="all">Todas las categorías</option>
+                                <option value="VIVIENDA">Vivienda</option>
+                                <option value="ALIMENTACION">Alimentación</option>
+                                <option value="TRANSPORTE">Transporte</option>
+                                <option value="ENTRETENIMIENTO">Entretenimiento</option>
+                                <option value="SERVICIOS">Servicios</option>
+                            </select>
                         </div>
                         <div class="card-body">
                             <div class="chart-container">
@@ -426,66 +487,10 @@
                     <i class="bi bi-wallet"></i> Transacciones por Monedero
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4 mb-4">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h5 class="card-title">Monedero Principal</h5>
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span>Ingresos:</span>
-                                        <span class="text-success">$3,500.00</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span>Gastos:</span>
-                                        <span class="text-danger">$2,000.00</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between">
-                                        <span>Balance:</span>
-                                        <span class="fw-bold">$1,500.00</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-4">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h5 class="card-title">Monedero Ahorros</h5>
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span>Ingresos:</span>
-                                        <span class="text-success">$500.00</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span>Gastos:</span>
-                                        <span class="text-danger">$0.00</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between">
-                                        <span>Balance:</span>
-                                        <span class="fw-bold">$500.00</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-4">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h5 class="card-title">Monedero Gastos</h5>
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span>Ingresos:</span>
-                                        <span class="text-success">$0.00</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span>Gastos:</span>
-                                        <span class="text-danger">$500.00</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between">
-                                        <span>Balance:</span>
-                                        <span class="fw-bold">-$500.00</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="row" id="walletsSummary">
+                        <!-- Los resúmenes de monederos se cargarán dinámicamente aquí -->
                     </div>
-                    <div class="chart-container">
+                    <div class="chart-container mt-4">
                         <canvas id="walletTransactionsChart"></canvas>
                     </div>
                 </div>
@@ -497,35 +502,16 @@
                     <i class="bi bi-lightbulb"></i> Insights Financieros
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <div class="alert alert-info" role="alert">
-                                <h5 class="alert-heading"><i class="bi bi-info-circle"></i> Gasto Elevado</h5>
-                                <p>Tu gasto en <strong>Entretenimiento</strong> aumentó un 20% respecto al mes anterior.</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="alert alert-success" role="alert">
-                                <h5 class="alert-heading"><i class="bi bi-check-circle"></i> Ahorro Positivo</h5>
-                                <p>Has ahorrado un 37.5% de tus ingresos este mes, superando tu meta del 30%.</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="alert alert-warning" role="alert">
-                                <h5 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Recordatorio</h5>
-                                <p>Tienes un pago programado de <strong>$800</strong> para mañana (Alquiler).</p>
-                            </div>
-                        </div>
+                    <div class="row" id="insightsContainer">
+                        <!-- Los insights se cargarán dinámicamente aquí -->
                     </div>
                     <div class="row">
                         <div class="col-md-12">
                             <div class="card bg-light">
                                 <div class="card-body">
                                     <h5 class="card-title">Recomendaciones</h5>
-                                    <ul class="list-group list-group-flush">
-                                        <li class="list-group-item bg-transparent">Considera reducir gastos en entretenimiento para alcanzar tu meta de ahorro.</li>
-                                        <li class="list-group-item bg-transparent">Programa transferencias automáticas a tu monedero de ahorros para mantener la disciplina.</li>
-                                        <li class="list-group-item bg-transparent">Revisa tus suscripciones mensuales para identificar servicios que no utilizas.</li>
+                                    <ul class="list-group list-group-flush" id="recommendationsList">
+                                        <!-- Las recomendaciones se cargarán dinámicamente aquí -->
                                     </ul>
                                 </div>
                             </div>
@@ -541,36 +527,230 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
 <!-- Chart.js initialization -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Show/hide date range selector based on period selection
-        document.getElementById('periodSelect').addEventListener('change', function() {
-            if (this.value === 'custom') {
-                document.getElementById('dateRangeSelector').classList.remove('d-none');
-            } else {
-                document.getElementById('dateRangeSelector').classList.add('d-none');
-            }
-        });
+<script th:inline="javascript">
+    // Obtener los datos del modelo de Thymeleaf
+    const cliente = /*[[${cliente}]]*/ {
+        nombre: 'Usuario Demo',
+        email: 'demo@example.com',
+        rango: 'PLATA'
+    };
 
-        // Income vs Expenses Chart
-        const incomeExpensesCtx = document.getElementById('incomeExpensesChart').getContext('2d');
-        const incomeExpensesChart = new Chart(incomeExpensesCtx, {
+    let monederos = /*[[${monederos}]]*/ [];
+    let transacciones = /*[[${transacciones}]]*/ [];
+    let categoriaGastos = /*[[${categoriaGastos}]]*/ {};
+
+    // Variables globales para almacenar las instancias de los gráficos
+    let incomeExpensesChart, expenseCategoriesChart, spendingTrendsChart, walletTransactionsChart;
+
+    // Variables para almacenar datos procesados
+    let monthlyData = {
+        income: {},
+        expense: {},
+        labels: []
+    };
+
+    let weeklyData = {
+        income: {},
+        expense: {},
+        labels: []
+    };
+
+    let dailyData = {
+        income: {},
+        expense: {},
+        labels: []
+    };
+
+    // Colores para gráficos
+    const colors = {
+        primary: '#2575fc',
+        secondary: '#6a11cb',
+        success: '#198754',
+        danger: '#dc3545',
+        warning: '#ffc107',
+        info: '#0dcaf0',
+        vivienda: '#2575fc',
+        alimentacion: '#6a11cb',
+        transporte: '#fd7e14',
+        entretenimiento: '#20c997',
+        servicios: '#6c757d',
+        otros: '#adb5bd'
+    };
+
+    // Función para mostrar overlay de carga
+    function showLoading() {
+        document.getElementById('loadingOverlay').classList.add('active');
+    }
+
+    // Función para ocultar overlay de carga
+    function hideLoading() {
+        document.getElementById('loadingOverlay').classList.remove('active');
+    }
+
+    // Función para formatear moneda
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
+    }
+
+    // Función para formatear porcentaje
+    function formatPercentage(value) {
+        return new Intl.NumberFormat('es-CO', {
+            style: 'percent',
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1
+        }).format(value / 100);
+    }
+
+    // Simular datos para la aplicación (en un entorno real, esto vendría del backend)
+    function generateSampleData() {
+        showLoading();
+
+        // Generar datos de prueba (en una aplicación real, estos datos vendrían del servidor)
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+
+        // Generar datos mensuales para los últimos 5 meses
+        const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        monthlyData.labels = [];
+        monthlyData.income = [];
+        monthlyData.expense = [];
+
+        for (let i = 4; i >= 0; i--) {
+            const monthIndex = (month - i + 12) % 12;
+            monthlyData.labels.push(months[monthIndex]);
+            monthlyData.income.push(Math.floor(Math.random() * 2000000) + 3000000); // Entre 3M y 5M
+            monthlyData.expense.push(Math.floor(Math.random() * 1000000) + 2000000); // Entre 2M y 3M
+        }
+
+        // Generar datos semanales para las últimas 4 semanas
+        weeklyData.labels = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'];
+        weeklyData.income = [];
+        weeklyData.expense = [];
+
+        for (let i = 0; i < 4; i++) {
+            weeklyData.income.push(Math.floor(Math.random() * 500000) + 750000); // Entre 750k y 1.25M
+            weeklyData.expense.push(Math.floor(Math.random() * 400000) + 500000); // Entre 500k y 900k
+        }
+
+        // Generar datos diarios para los últimos 7 días
+        const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+        dailyData.labels = days;
+        dailyData.income = [];
+        dailyData.expense = [];
+
+        for (let i = 0; i < 7; i++) {
+            dailyData.income.push(Math.floor(Math.random() * 200000) + 150000); // Entre 150k y 350k
+            dailyData.expense.push(Math.floor(Math.random() * 100000) + 100000); // Entre 100k y 200k
+        }
+
+        // Generar datos para monederos
+        monederos = [
+            {
+                nombre: 'Principal',
+                saldo: 5250000,
+                ingresos: 3500000,
+                gastos: 2000000,
+                color: colors.primary
+            },
+            {
+                nombre: 'Ahorros',
+                saldo: 2800000,
+                ingresos: 500000,
+                gastos: 0,
+                color: colors.success
+            },
+            {
+                nombre: 'Gastos',
+                saldo: 700000,
+                ingresos: 0,
+                gastos: 500000,
+                color: colors.warning
+            }
+        ];
+
+        // Generar datos de categorías de gastos
+        categoriaGastos = {
+            VIVIENDA: 750000,
+            ALIMENTACION: 500000,
+            TRANSPORTE: 375000,
+            ENTRETENIMIENTO: 250000,
+            SERVICIOS: 625000
+        };
+
+        // Generar insights basados en los datos
+        generateInsights();
+
+        // Actualizar la interfaz con los datos generados
+        updateUI();
+
+        hideLoading();
+    }
+
+    // Función para actualizar la interfaz con datos nuevos
+    function updateUI() {
+        // Actualizar estadísticas de resumen
+        const totalIncome = monthlyData.income.reduce((a, b) => a + b, 0);
+        const totalExpense = monthlyData.expense.reduce((a, b) => a + b, 0);
+        const netBalance = totalIncome - totalExpense;
+        const savingsRate = totalIncome > 0 ? (netBalance / totalIncome) * 100 : 0;
+
+        document.getElementById('totalIncome').textContent = formatCurrency(totalIncome);
+        document.getElementById('totalExpense').textContent = formatCurrency(totalExpense);
+        document.getElementById('netBalance').textContent = formatCurrency(netBalance);
+        document.getElementById('savingsRate').textContent = formatPercentage(savingsRate);
+
+        // Crear o actualizar gráficos
+        updateIncomeExpensesChart('monthly');
+        updateExpenseCategoriesChart();
+        updateTopCategories();
+        updateSpendingTrendsChart();
+        updateWalletsSummary();
+        updateWalletTransactionsChart();
+    }
+
+    // Función para actualizar el gráfico de ingresos vs gastos
+    function updateIncomeExpensesChart(viewType) {
+        let data;
+
+        if (viewType === 'monthly') {
+            data = monthlyData;
+        } else if (viewType === 'weekly') {
+            data = weeklyData;
+        } else if (viewType === 'daily') {
+            data = dailyData;
+        }
+
+        const ctx = document.getElementById('incomeExpensesChart').getContext('2d');
+
+        // Destruir el gráfico si ya existe
+        if (incomeExpensesChart) {
+            incomeExpensesChart.destroy();
+        }
+
+        // Crear nuevo gráfico
+        incomeExpensesChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo'],
+                labels: data.labels,
                 datasets: [
                     {
                         label: 'Ingresos',
-                        data: [3200, 3500, 3800, 3600, 4000],
-                        backgroundColor: '#2575fc',
-                        borderColor: '#2575fc',
+                        data: data.income,
+                        backgroundColor: colors.primary,
+                        borderColor: colors.primary,
                         borderWidth: 1
                     },
                     {
                         label: 'Gastos',
-                        data: [2800, 2600, 2900, 2400, 2500],
-                        backgroundColor: '#dc3545',
-                        borderColor: '#dc3545',
+                        data: data.expense,
+                        backgroundColor: colors.danger,
+                        borderColor: colors.danger,
                         borderWidth: 1
                     }
                 ]
@@ -583,7 +763,16 @@
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                return '$' + value;
+                                return formatCurrency(value);
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + formatCurrency(context.raw);
                             }
                         }
                     }
@@ -591,21 +780,55 @@
             }
         });
 
-        // Expense Categories Chart
-        const expenseCategoriesCtx = document.getElementById('expenseCategoriesChart').getContext('2d');
-        const expenseCategoriesChart = new Chart(expenseCategoriesCtx, {
+        // Actualizar botones activos
+        document.querySelectorAll('[data-view]').forEach(btn => {
+            if (btn.getAttribute('data-view') === viewType) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    // Función para actualizar el gráfico de categorías de gastos
+    function updateExpenseCategoriesChart() {
+        const ctx = document.getElementById('expenseCategoriesChart').getContext('2d');
+
+        // Preparar datos
+        const labels = Object.keys(categoriaGastos).map(key => {
+            switch(key) {
+                case 'VIVIENDA': return 'Vivienda';
+                case 'ALIMENTACION': return 'Alimentación';
+                case 'TRANSPORTE': return 'Transporte';
+                case 'ENTRETENIMIENTO': return 'Entretenimiento';
+                case 'SERVICIOS': return 'Servicios';
+                default: return key;
+            }
+        });
+
+        const values = Object.values(categoriaGastos);
+        const backgroundColors = [
+            colors.vivienda,
+            colors.alimentacion,
+            colors.transporte,
+            colors.entretenimiento,
+            colors.servicios,
+            colors.otros
+        ];
+
+        // Destruir el gráfico si ya existe
+        if (expenseCategoriesChart) {
+            expenseCategoriesChart.destroy();
+        }
+
+        // Crear nuevo gráfico
+        expenseCategoriesChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['Vivienda', 'Alimentación', 'Transporte', 'Entretenimiento', 'Servicios'],
+                labels: labels,
                 datasets: [{
-                    data: [30, 20, 15, 10, 25],
-                    backgroundColor: [
-                        '#2575fc',
-                        '#6a11cb',
-                        '#fd7e14',
-                        '#20c997',
-                        '#6c757d'
-                    ],
+                    data: values,
+                    backgroundColor: backgroundColors,
                     borderWidth: 1
                 }]
             },
@@ -614,44 +837,200 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: 'bottom'
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return context.label + ': ' + formatCurrency(value) + ' (' + percentage + '%)';
+                            }
+                        }
                     }
                 }
             }
         });
+    }
 
-        // Spending Trends Chart
-        const spendingTrendsCtx = document.getElementById('spendingTrendsChart').getContext('2d');
-        const spendingTrendsChart = new Chart(spendingTrendsCtx, {
+    // Función para actualizar las principales categorías de gastos
+    function updateTopCategories() {
+        const container = document.getElementById('topCategoriesContainer');
+        container.innerHTML = '';
+
+        // Calcular el total para obtener porcentajes
+        const total = Object.values(categoriaGastos).reduce((a, b) => a + b, 0);
+
+        // Crear elementos para cada categoría
+        Object.entries(categoriaGastos).forEach(([key, value]) => {
+            const percentage = (value / total) * 100;
+            let iconClass, color;
+
+            switch(key) {
+                case 'VIVIENDA':
+                    iconClass = 'bi-house';
+                    color = colors.vivienda;
+                    break;
+                case 'ALIMENTACION':
+                    iconClass = 'bi-cart';
+                    color = colors.alimentacion;
+                    break;
+                case 'TRANSPORTE':
+                    iconClass = 'bi-bus-front';
+                    color = colors.transporte;
+                    break;
+                case 'ENTRETENIMIENTO':
+                    iconClass = 'bi-tv';
+                    color = colors.entretenimiento;
+                    break;
+                case 'SERVICIOS':
+                    iconClass = 'bi-lightning';
+                    color = colors.servicios;
+                    break;
+                default:
+                    iconClass = 'bi-box';
+                    color = colors.otros;
+            }
+
+            const categoryName = key.charAt(0) + key.slice(1).toLowerCase();
+            const formattedName = key === 'ALIMENTACION' ? 'Alimentación' : categoryName;
+
+            const categoryHTML = `
+                <div class="category-item">
+                    <div class="category-icon" style="background-color: rgba(${hexToRgb(color)}, 0.1); color: ${color};">
+                        <i class="bi ${iconClass}"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                            <h6 class="mb-0">${formattedName}</h6>
+                            <span>${formatCurrency(value)} (${percentage.toFixed(1)}%)</span>
+                        </div>
+                        <div class="progress category-bar">
+                            <div class="progress-bar" role="progressbar"
+                                 style="width: ${percentage}%; background-color: ${color};"
+                                 aria-valuenow="${percentage}"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML += categoryHTML;
+        });
+    }
+
+    // Función para actualizar el gráfico de tendencias de gasto
+    function updateSpendingTrendsChart() {
+        const ctx = document.getElementById('spendingTrendsChart').getContext('2d');
+        const selectedCategory = document.getElementById('trendCategoryFilter').value;
+
+        // Destruir el gráfico si ya existe
+        if (spendingTrendsChart) {
+            spendingTrendsChart.destroy();
+        }
+
+        // Preparar datasets basados en la categoría seleccionada
+        let datasets = [];
+
+        if (selectedCategory === 'all') {
+            // Mostrar las principales categorías
+            const categories = ['VIVIENDA', 'ALIMENTACION', 'TRANSPORTE'];
+            categories.forEach((category, index) => {
+                // Generar datos aleatorios para cada semana
+                const data = [
+                    Math.floor(Math.random() * 50000) + 150000,
+                    Math.floor(Math.random() * 50000) + 150000,
+                    Math.floor(Math.random() * 50000) + 150000,
+                    Math.floor(Math.random() * 50000) + 150000
+                ];
+
+                let color, label;
+
+                switch(category) {
+                    case 'VIVIENDA':
+                        color = colors.vivienda;
+                        label = 'Vivienda';
+                        break;
+                    case 'ALIMENTACION':
+                        color = colors.alimentacion;
+                        label = 'Alimentación';
+                        break;
+                    case 'TRANSPORTE':
+                        color = colors.transporte;
+                        label = 'Transporte';
+                        break;
+                }
+
+                datasets.push({
+                    label: label,
+                    data: data,
+                    borderColor: color,
+                    backgroundColor: `rgba(${hexToRgb(color)}, 0.1)`,
+                    tension: 0.4,
+                    fill: true
+                });
+            });
+        } else {
+            // Mostrar solo la categoría seleccionada
+            let color, label;
+
+            switch(selectedCategory) {
+                case 'VIVIENDA':
+                    color = colors.vivienda;
+                    label = 'Vivienda';
+                    break;
+                case 'ALIMENTACION':
+                    color = colors.alimentacion;
+                    label = 'Alimentación';
+                    break;
+                case 'TRANSPORTE':
+                    color = colors.transporte;
+                    label = 'Transporte';
+                    break;
+                case 'ENTRETENIMIENTO':
+                    color = colors.entretenimiento;
+                    label = 'Entretenimiento';
+                    break;
+                case 'SERVICIOS':
+                    color = colors.servicios;
+                    label = 'Servicios';
+                    break;
+                default:
+                    color = colors.otros;
+                    label = 'Otros';
+            }
+
+            // Generar datos para las últimas 4 semanas
+            const data = [
+                Math.floor(Math.random() * 50000) + 150000,
+                Math.floor(Math.random() * 50000) + 150000,
+                Math.floor(Math.random() * 50000) + 150000,
+                Math.floor(Math.random() * 50000) + 150000
+            ];
+
+            datasets.push({
+                label: label,
+                data: data,
+                borderColor: color,
+                backgroundColor: `rgba(${hexToRgb(color)}, 0.1)`,
+                tension: 0.4,
+                fill: true
+            });
+        }
+
+        // Crear nuevo gráfico
+        spendingTrendsChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
-                datasets: [
-                    {
-                        label: 'Vivienda',
-                        data: [200, 180, 190, 180],
-                        borderColor: '#2575fc',
-                        backgroundColor: 'rgba(37, 117, 252, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    },
-                    {
-                        label: 'Alimentación',
-                        data: [120, 140, 110, 130],
-                        borderColor: '#6a11cb',
-                        backgroundColor: 'rgba(106, 17, 203, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    },
-                    {
-                        label: 'Transporte',
-                        data: [90, 100, 85, 100],
-                        borderColor: '#fd7e14',
-                        backgroundColor: 'rgba(253, 126, 20, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }
-                ]
+                datasets: datasets
             },
             options: {
                 responsive: true,
@@ -661,37 +1040,90 @@
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                return '$' + value;
+                                return formatCurrency(value);
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + formatCurrency(context.raw);
                             }
                         }
                     }
                 }
             }
         });
+    }
 
-        // Wallet Transactions Chart
-        const walletTransactionsCtx = document.getElementById('walletTransactionsChart').getContext('2d');
-        const walletTransactionsChart = new Chart(walletTransactionsCtx, {
+    // Función para actualizar el resumen de monederos
+    function updateWalletsSummary() {
+        const container = document.getElementById('walletsSummary');
+        container.innerHTML = '';
+
+        // Crear elementos para cada monedero
+        monederos.forEach(monedero => {
+            const walletHTML = `
+                <div class="col-md-4 mb-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h5 class="card-title">${monedero.nombre}</h5>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Ingresos:</span>
+                                <span class="text-success">${formatCurrency(monedero.ingresos)}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Gastos:</span>
+                                <span class="text-danger">${formatCurrency(monedero.gastos)}</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Balance:</span>
+                                <span class="fw-bold">${formatCurrency(monedero.saldo)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML += walletHTML;
+        });
+    }
+
+    // Función para actualizar el gráfico de transacciones por monedero
+    function updateWalletTransactionsChart() {
+        const ctx = document.getElementById('walletTransactionsChart').getContext('2d');
+
+        // Destruir el gráfico si ya existe
+        if (walletTransactionsChart) {
+            walletTransactionsChart.destroy();
+        }
+
+        // Preparar datasets para cada monedero
+        const datasets = monederos.map(monedero => {
+            // Generar datos aleatorios para los últimos 5 meses
+            const data = [
+                Math.floor(Math.random() * 500000) + 1000000,
+                Math.floor(Math.random() * 500000) + 1000000,
+                Math.floor(Math.random() * 500000) + 1000000,
+                Math.floor(Math.random() * 500000) + 1000000,
+                Math.floor(Math.random() * 500000) + 1000000
+            ];
+
+            return {
+                label: monedero.nombre,
+                data: data,
+                backgroundColor: monedero.color
+            };
+        });
+
+        // Crear nuevo gráfico
+        walletTransactionsChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo'],
-                datasets: [
-                    {
-                        label: 'Monedero Principal',
-                        data: [1200, 1500, 1300, 1400, 1500],
-                        backgroundColor: '#2575fc'
-                    },
-                    {
-                        label: 'Monedero Ahorros',
-                        data: [400, 300, 500, 450, 500],
-                        backgroundColor: '#20c997'
-                    },
-                    {
-                        label: 'Monedero Gastos',
-                        data: [-300, -400, -350, -450, -500],
-                        backgroundColor: '#fd7e14'
-                    }
-                ]
+                labels: monthlyData.labels,
+                datasets: datasets
             },
             options: {
                 responsive: true,
@@ -704,12 +1136,182 @@
                         stacked: false,
                         ticks: {
                             callback: function(value) {
-                                return '$' + value;
+                                return formatCurrency(value);
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + formatCurrency(context.raw);
                             }
                         }
                     }
                 }
             }
+        });
+    }
+
+    // Función para generar insights basados en los datos
+    function generateInsights() {
+        const insightsContainer = document.getElementById('insightsContainer');
+        insightsContainer.innerHTML = '';
+
+        // Insights basados en los datos
+        const insights = [
+            {
+                title: 'Gasto Elevado',
+                message: 'Tu gasto en <strong>Entretenimiento</strong> aumentó un 20% respecto al mes anterior.',
+                type: 'info',
+                icon: 'bi-info-circle'
+            },
+            {
+                title: 'Ahorro Positivo',
+                message: `Has ahorrado un ${formatPercentage(37.5)} de tus ingresos este mes, superando tu meta del 30%.`,
+                type: 'success',
+                icon: 'bi-check-circle'
+            },
+            {
+                title: 'Recordatorio',
+                message: `Tienes un pago programado de <strong>${formatCurrency(800000)}</strong> para mañana (Alquiler).`,
+                type: 'warning',
+                icon: 'bi-exclamation-triangle'
+            }
+        ];
+
+        // Crear elementos para cada insight
+        insights.forEach(insight => {
+            const insightHTML = `
+                <div class="col-md-4 mb-3">
+                    <div class="alert alert-${insight.type} alert-insight" role="alert">
+                        <h5 class="alert-heading"><i class="${insight.icon}"></i> ${insight.title}</h5>
+                        <p>${insight.message}</p>
+                    </div>
+                </div>
+            `;
+
+            insightsContainer.innerHTML += insightHTML;
+        });
+
+        // Generar recomendaciones
+        const recommendationsList = document.getElementById('recommendationsList');
+        recommendationsList.innerHTML = '';
+
+        const recommendations = [
+            'Considera reducir gastos en entretenimiento para alcanzar tu meta de ahorro.',
+            'Programa transferencias automáticas a tu monedero de ahorros para mantener la disciplina.',
+            'Revisa tus suscripciones mensuales para identificar servicios que no utilizas.',
+            'Analiza tus gastos de alimentación y considera preparar más comidas en casa.'
+        ];
+
+        recommendations.forEach(recommendation => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item bg-transparent';
+            li.textContent = recommendation;
+            recommendationsList.appendChild(li);
+        });
+    }
+
+    // Función auxiliar para convertir hex a rgb
+    function hexToRgb(hex) {
+        // Eliminar el # si está presente
+        hex = hex.replace(/^#/, '');
+
+        // Convertir a componentes RGB
+        const bigint = parseInt(hex, 16);
+        const r = (bigint >> 16) & 255;
+        const g = (bigint >> 8) & 255;
+        const b = bigint & 255;
+
+        return `${r}, ${g}, ${b}`;
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar datos y UI
+        generateSampleData();
+
+        // Event listener para cambiar la vista del gráfico de ingresos vs gastos
+        document.querySelectorAll('[data-view]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const viewType = this.getAttribute('data-view');
+                updateIncomeExpensesChart(viewType);
+            });
+        });
+
+        // Event listener para el filtro de categorías en el gráfico de tendencias
+        document.getElementById('trendCategoryFilter').addEventListener('change', function() {
+            updateSpendingTrendsChart();
+        });
+
+        // Event listener para el selector de período
+        document.getElementById('periodSelect').addEventListener('change', function() {
+            if (this.value === 'custom') {
+                document.getElementById('dateRangeSelector').classList.remove('d-none');
+            } else {
+                document.getElementById('dateRangeSelector').classList.add('d-none');
+                showLoading();
+
+                // Simular carga de datos
+                setTimeout(() => {
+                    generateSampleData();
+                }, 500);
+            }
+        });
+
+        // Event listener para el botón de aplicar rango de fechas
+        document.getElementById('applyDateRange').addEventListener('click', function() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            if (startDate && endDate) {
+                showLoading();
+
+                // Simular carga de datos para el rango seleccionado
+                setTimeout(() => {
+                    generateSampleData();
+                }, 500);
+            }
+        });
+
+        // Event listeners para exportación de gráficos
+        document.getElementById('exportPNG').addEventListener('click', function(e) {
+            e.preventDefault();
+            const canvas = document.getElementById('expenseCategoriesChart');
+            const image = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = 'categorias-gastos.png';
+            link.href = image;
+            link.click();
+        });
+
+        document.getElementById('exportPDF').addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('Funcionalidad de exportación a PDF no implementada en esta versión de demostración.');
+        });
+
+        document.getElementById('exportCSV').addEventListener('click', function(e) {
+            e.preventDefault();
+
+            // Crear datos CSV
+            let csvContent = 'data:text/csv;charset=utf-8,';
+            csvContent += 'Categoría,Monto\n';
+
+            Object.entries(categoriaGastos).forEach(([key, value]) => {
+                const categoryName = key === 'ALIMENTACION' ? 'Alimentación' :
+                    key.charAt(0) + key.slice(1).toLowerCase();
+                csvContent += `${categoryName},${value}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', 'categorias-gastos.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         });
     });
 </script>

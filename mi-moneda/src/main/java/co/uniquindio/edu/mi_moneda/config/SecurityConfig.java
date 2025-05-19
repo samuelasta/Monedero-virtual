@@ -44,7 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/", "/login-page", "/register", "/css/**", "/js/**", "/images/**").permitAll()
                         // Permitir el endpoint de prueba
                         .requestMatchers("/test-endpoint", "/dashboard-test").permitAll()
-                        // Requerir autenticación para todo lo demás
+                        // Requerir autenticación para todo lo demas
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
@@ -60,7 +60,7 @@ public class SecurityConfig {
                         .logoutSuccessUrl("/login-page?logout")
                         .permitAll()
                 )
-                // Agrega esto para registrar explícitamente authenticationProvider
+                // esto para registrar explícitamente authenticationProvider
                 .authenticationProvider(authenticationProvider());
 
         return http.build();

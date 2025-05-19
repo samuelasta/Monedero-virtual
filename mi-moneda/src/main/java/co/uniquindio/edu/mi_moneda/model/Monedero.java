@@ -8,9 +8,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -26,10 +27,36 @@ public class Monedero implements identificable {
     private Cliente propietario;
     private TipoMonedero tipoMonedero;
     private double saldo;
+
+    @Indexed(unique = true)
+    private String numeroCuenta; // Unique account number for transfers
+
+    private LocalDateTime fechaCreacion;
+    private boolean activo;
     private DoubleList<Transaccion> historialTransacciones;
 
     @Override
     public String getId() {
         return id;
+    }
+
+    /**
+     * Generate a formatted account number for display
+     * Format: XXXX-XXXX-XXXX-1234
+     * @return Formatted account number
+     */
+    public String getNumeroCuentaFormateado() {
+        if (numeroCuenta == null || numeroCuenta.length() < 16) {
+            return numeroCuenta;
+        }
+
+        StringBuilder formatted = new StringBuilder();
+        for (int i = 0; i < 16; i++) {
+            if (i > 0 && i % 4 == 0) {
+                formatted.append("-");
+            }
+            formatted.append(numeroCuenta.charAt(i));
+        }
+        return formatted.toString();
     }
 }
