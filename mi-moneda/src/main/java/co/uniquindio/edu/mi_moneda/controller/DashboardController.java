@@ -1,16 +1,37 @@
 package co.uniquindio.edu.mi_moneda.controller;
 
+import co.uniquindio.edu.mi_moneda.dto.BeneficioDTO;
+import co.uniquindio.edu.mi_moneda.dto.ClienteDTO;
+import co.uniquindio.edu.mi_moneda.dto.MonederoDTO;
+import co.uniquindio.edu.mi_moneda.dto.NotificacionDTO;
+import co.uniquindio.edu.mi_moneda.dto.PatronGastoDTO;
+import co.uniquindio.edu.mi_moneda.dto.PuntosDTO;
+import co.uniquindio.edu.mi_moneda.dto.TransaccionDTO;
+import co.uniquindio.edu.mi_moneda.dto.TransaccionProgramadaDTO;
 import co.uniquindio.edu.mi_moneda.listasPropias.DoubleList;
 import co.uniquindio.edu.mi_moneda.listasPropias.DoubleNode;
-import co.uniquindio.edu.mi_moneda.listasPropias.SimpleList;
 import co.uniquindio.edu.mi_moneda.listasPropias.Node;
-import co.uniquindio.edu.mi_moneda.listasPropias.QueueTransactionProgramed;
 import co.uniquindio.edu.mi_moneda.listasPropias.NodeQueue;
-import co.uniquindio.edu.mi_moneda.listasPropias.OwnMap;
-import co.uniquindio.edu.mi_moneda.model.*;
+import co.uniquindio.edu.mi_moneda.listasPropias.QueueTransactionProgramed;
+import co.uniquindio.edu.mi_moneda.listasPropias.SimpleList;
+import co.uniquindio.edu.mi_moneda.model.Beneficio;
+import co.uniquindio.edu.mi_moneda.model.Cliente;
+import co.uniquindio.edu.mi_moneda.model.Monedero;
+import co.uniquindio.edu.mi_moneda.model.Notificacion;
+import co.uniquindio.edu.mi_moneda.model.PatronGasto;
+import co.uniquindio.edu.mi_moneda.model.Puntos;
+import co.uniquindio.edu.mi_moneda.model.Transaccion;
+import co.uniquindio.edu.mi_moneda.model.TransaccionProgramada;
 import co.uniquindio.edu.mi_moneda.model.enums.CategoriaGasto;
 import co.uniquindio.edu.mi_moneda.model.enums.TipoMonedero;
-import co.uniquindio.edu.mi_moneda.repository.*;
+import co.uniquindio.edu.mi_moneda.repository.BeneficioRepository;
+import co.uniquindio.edu.mi_moneda.repository.ClienteRepository;
+import co.uniquindio.edu.mi_moneda.repository.MonederoRepository;
+import co.uniquindio.edu.mi_moneda.repository.NotificacionRepository;
+import co.uniquindio.edu.mi_moneda.repository.PatronGastoRepository;
+import co.uniquindio.edu.mi_moneda.repository.PuntosRepository;
+import co.uniquindio.edu.mi_moneda.repository.TransaccionProgramadaRepository;
+import co.uniquindio.edu.mi_moneda.repository.TransaccionRepository;
 import co.uniquindio.edu.mi_moneda.services.interfaces.ClienteService;
 import co.uniquindio.edu.mi_moneda.services.interfaces.PuntosService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +47,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 public class DashboardController {
@@ -74,26 +96,47 @@ public class DashboardController {
             // Obtener información del cliente
             String clienteId = (String) session.getAttribute("clienteId");
             Cliente cliente = clienteService.buscarClientePorId(clienteId);
-            model.addAttribute("cliente", cliente);
 
             // Calcular el balance total sumando saldos de todos los monederos
             double balanceTotal = calcularBalanceTotal(cliente);
-            model.addAttribute("balanceTotal", balanceTotal);
-
-            // Número de monederos activos
-            model.addAttribute("cantidadMonederos", obtenerCantidadMonederos(cliente));
 
             // Buscar las transacciones más recientes del cliente
             List<Transaccion> transaccionesRecientes = obtenerTransaccionesRecientes(cliente);
-            model.addAttribute("transaccionesRecientes", transaccionesRecientes);
 
             // Obtener transacciones programadas próximas
             List<TransaccionProgramada> transaccionesProgramadas = obtenerTransaccionesProgramadas(cliente);
-            model.addAttribute("transaccionesProgramadas", transaccionesProgramadas);
 
             // Obtener las notificaciones no leídas
             List<Notificacion> notificacionesNoLeidas = obtenerNotificacionesNoLeidas(cliente);
-            model.addAttribute("notificacionesNoLeidas", notificacionesNoLeidas);
+
+            // Crear DTO de cliente con toda la información
+            ClienteDTO clienteDTO = ClienteDTO.fromEntity(cliente, balanceTotal,
+                    transaccionesRecientes,
+                    transaccionesProgramadas,
+                    notificacionesNoLeidas);
+            model.addAttribute("cliente", clienteDTO);
+
+            // Añadir atributos adicionales al modelo
+            model.addAttribute("balanceTotal", balanceTotal);
+            model.addAttribute("cantidadMonederos", obtenerCantidadMonederos(cliente));
+
+            // Convertir transacciones a DTOs
+            List<TransaccionDTO> transaccionesDTO = transaccionesRecientes.stream()
+                    .map(TransaccionDTO::fromEntity)
+                    .collect(Collectors.toList());
+            model.addAttribute("transaccionesRecientes", transaccionesDTO);
+
+            // Convertir transacciones programadas a DTOs
+            List<TransaccionProgramadaDTO> programadasDTO = transaccionesProgramadas.stream()
+                    .map(TransaccionProgramadaDTO::fromEntity)
+                    .collect(Collectors.toList());
+            model.addAttribute("transaccionesProgramadas", programadasDTO);
+
+            // Convertir notificaciones a DTOs
+            List<NotificacionDTO> notificacionesDTO = notificacionesNoLeidas.stream()
+                    .map(NotificacionDTO::fromEntity)
+                    .collect(Collectors.toList());
+            model.addAttribute("notificacionesNoLeidas", notificacionesDTO);
             model.addAttribute("cantidadNotificaciones", notificacionesNoLeidas.size());
 
             // Obtener información de puntos del cliente
@@ -103,16 +146,22 @@ public class DashboardController {
                 puntos.setPuntosAcumulados(0);
                 puntos.setHistorialPuntos(new SimpleList<>());
             }
-            model.addAttribute("puntos", puntos);
+
+            // Convertir puntos a DTO
+            PuntosDTO puntosDTO = PuntosDTO.fromEntity(puntos);
+            model.addAttribute("puntos", puntosDTO);
 
             // Calcular puntos necesarios para el siguiente rango
             Map<String, Object> rangosInfo = calcularInfoRangos(cliente, puntos);
             model.addAttribute("rangosInfo", rangosInfo);
 
-            // Obtener beneficios disponibles
+            // Obtener beneficios disponibles y convertirlos a DTOs
             List<Beneficio> beneficiosDisponibles = beneficioRepository.findByCostePuntosLessThanEqual(
                     puntos != null ? puntos.getPuntosAcumulados() : 0);
-            model.addAttribute("beneficiosDisponibles", beneficiosDisponibles);
+            List<BeneficioDTO> beneficiosDTO = beneficiosDisponibles.stream()
+                    .map(BeneficioDTO::fromEntity)
+                    .collect(Collectors.toList());
+            model.addAttribute("beneficiosDisponibles", beneficiosDTO);
 
             // Obtener distribución de gastos para el gráfico
             Map<String, Double> distribucionGastos = obtenerDistribucionGastos(cliente);
@@ -142,23 +191,33 @@ public class DashboardController {
 
         try {
             Cliente cliente = clienteService.buscarClientePorId(clienteId);
-            model.addAttribute("cliente", cliente);
 
-            // Convertir la SimpleList a una List estándar de Java
-            List<Monedero> monederos = new ArrayList<>();
+            // Convertir cliente a DTO
+            ClienteDTO clienteDTO = new ClienteDTO();
+            clienteDTO.setId(cliente.getId());
+            clienteDTO.setNombre(cliente.getNombre());
+            clienteDTO.setEmail(cliente.getEmail());
+            clienteDTO.setRango(cliente.getRango());
+
+            model.addAttribute("cliente", clienteDTO);
+
+            // Convertir la SimpleList a una List de DTOs
+            List<MonederoDTO> monederosDTO = new ArrayList<>();
             SimpleList<Monedero> monederosList = cliente.getMonederos();
             if (monederosList != null && !monederosList.isEmpty()) {
                 Node<Monedero> current = monederosList.getFirstNode();
                 while (current != null) {
-                    monederos.add(current.getValue());
+                    monederosDTO.add(MonederoDTO.fromEntity(current.getValue()));
                     current = current.getNextNodo();
                 }
             }
+            model.addAttribute("clienteMonederos", monederosDTO);
 
-            model.addAttribute("monederos", monederos);
-
-            List<Transaccion> transaccionesRecientes = new ArrayList<>();
-            model.addAttribute("transaccionesRecientes", transaccionesRecientes);
+            // Convertir transacciones recientes a DTOs
+            List<TransaccionDTO> transaccionesDTO = obtenerTransaccionesRecientes(cliente).stream()
+                    .map(TransaccionDTO::fromEntity)
+                    .collect(Collectors.toList());
+            model.addAttribute("transaccionesRecientes", transaccionesDTO);
 
             return "wallets";
         } catch (Exception e) {
@@ -215,6 +274,8 @@ public class DashboardController {
         }
     }
 
+    // [Resto de los métodos de navegación]
+
     /**
      * LLeva hacia la ventana de transacciones
      */
@@ -228,7 +289,13 @@ public class DashboardController {
 
         try {
             Cliente cliente = clienteService.buscarClientePorId(clienteId);
-            model.addAttribute("cliente", cliente);
+            ClienteDTO clienteDTO = new ClienteDTO();
+            clienteDTO.setId(cliente.getId());
+            clienteDTO.setNombre(cliente.getNombre());
+            clienteDTO.setEmail(cliente.getEmail());
+            clienteDTO.setRango(cliente.getRango());
+
+            model.addAttribute("cliente", clienteDTO);
 
             return "transactions";
         } catch (Exception e) {
@@ -237,179 +304,7 @@ public class DashboardController {
         }
     }
 
-    /**
-     * LLeva hacia la ventana de programadas
-     */
-    @GetMapping("/scheduled")
-    public String showProgramadas(HttpSession session, Model model) {
-        if (session.getAttribute("clienteId") == null) {
-            return "redirect:/login-page";
-        }
-
-        String clienteId = (String) session.getAttribute("clienteId");
-
-        try {
-            Cliente cliente = clienteService.buscarClientePorId(clienteId);
-            model.addAttribute("cliente", cliente);
-
-            return "programadas";
-        } catch (Exception e) {
-            session.invalidate();
-            return "redirect:/login-page";
-        }
-    }
-
-    /**
-     * LLeva hacia la ventana de puntos
-     */
-    @GetMapping("/points")
-    public String showPuntos(HttpSession session, Model model) {
-        if (session.getAttribute("clienteId") == null) {
-            return "redirect:/login-page";
-        }
-
-        String clienteId = (String) session.getAttribute("clienteId");
-
-        try {
-            Cliente cliente = clienteService.buscarClientePorId(clienteId);
-            model.addAttribute("cliente", cliente);
-
-            return "puntos";
-        } catch (Exception e) {
-            session.invalidate();
-            return "redirect:/login-page";
-        }
-    }
-
-    /**
-     * LLeva hacia la ventana de analisis
-     */
-    @GetMapping("/analytics")
-    public String showAnalisis(HttpSession session, Model model) {
-        if (session.getAttribute("clienteId") == null) {
-            return "redirect:/login-page";
-        }
-
-        String clienteId = (String) session.getAttribute("clienteId");
-
-        try {
-            Cliente cliente = clienteService.buscarClientePorId(clienteId);
-            model.addAttribute("cliente", cliente);
-
-            return "analisis";
-        } catch (Exception e) {
-            session.invalidate();
-            return "redirect:/login-page";
-        }
-    }
-
-    /**
-     * LLeva hacia la ventana de mi perfil
-     */
-    @GetMapping("/profile")
-    public String showPerfil(HttpSession session, Model model) {
-        if (session.getAttribute("clienteId") == null) {
-            return "redirect:/login-page";
-        }
-
-        String clienteId = (String) session.getAttribute("clienteId");
-
-        try {
-            Cliente cliente = clienteService.buscarClientePorId(clienteId);
-            model.addAttribute("cliente", cliente);
-
-            return "perfil";
-        } catch (Exception e) {
-            session.invalidate();
-            return "redirect:/login-page";
-        }
-    }
-
-    /**
-     * LLeva hacia la ventana de transacciones
-     */
-    @GetMapping("/transactions/deposit")
-    public String showDeposit(HttpSession session, Model model) {
-        if (session.getAttribute("clienteId") == null) {
-            return "redirect:/login-page";
-        }
-
-        String clienteId = (String) session.getAttribute("clienteId");
-
-        try {
-            Cliente cliente = clienteService.buscarClientePorId(clienteId);
-            model.addAttribute("cliente", cliente);
-
-            return "transactions";
-        } catch (Exception e) {
-            session.invalidate();
-            return "redirect:/login-page";
-        }
-    }
-    /**
-     * LLeva hacia la ventana de transacciones
-     */
-    @GetMapping("/transactions/withdraw")
-    public String showRetiro(HttpSession session, Model model) {
-        if (session.getAttribute("clienteId") == null) {
-            return "redirect:/login-page";
-        }
-
-        String clienteId = (String) session.getAttribute("clienteId");
-
-        try {
-            Cliente cliente = clienteService.buscarClientePorId(clienteId);
-            model.addAttribute("cliente", cliente);
-
-            return "transactions";
-        } catch (Exception e) {
-            session.invalidate();
-            return "redirect:/login-page";
-        }
-    }
-    /**
-     * LLeva hacia la ventana de transacciones
-     */
-    @GetMapping("/transactions/transfer")
-    public String showTransferenciaView(HttpSession session, Model model) {
-        if (session.getAttribute("clienteId") == null) {
-            return "redirect:/login-page";
-        }
-
-        String clienteId = (String) session.getAttribute("clienteId");
-
-        try {
-            Cliente cliente = clienteService.buscarClientePorId(clienteId);
-            model.addAttribute("cliente", cliente);
-
-            return "transactions";
-        } catch (Exception e) {
-            session.invalidate();
-            return "redirect:/login-page";
-        }
-    }
-
-    /**
-     * LLeva hacia la ventana de puntos
-     */
-    @GetMapping("/points/redeem")
-    public String showPuntosView(HttpSession session, Model model) {
-        if (session.getAttribute("clienteId") == null) {
-            return "redirect:/login-page";
-        }
-
-        String clienteId = (String) session.getAttribute("clienteId");
-
-        try {
-            Cliente cliente = clienteService.buscarClientePorId(clienteId);
-            model.addAttribute("cliente", cliente);
-
-            return "puntos";
-        } catch (Exception e) {
-            session.invalidate();
-            return "redirect:/login-page";
-        }
-    }
+    // [Métodos de cálculo y obtención de datos]
 
     /**
      * Calcula el balance total de todos los monederos
@@ -613,20 +508,10 @@ public class DashboardController {
             return resultado;
         }
 
-        // Si hay patrón de gasto, lo procesamos usando OwnMap
-        OwnMap distribucion = patronGasto.getDistribucionGastos();
-
-        // Recorrer las categorías de gasto
-        for (CategoriaGasto categoria : CategoriaGasto.values()) {
-            double monto = distribucion.getAmountCategory(categoria);
-            if (monto > 0) {
-                resultado.put(categoria.name(), monto);
-            }
-        }
-
-        return resultado;
+        // Si hay patrón de gasto, convertimos a DTO y obtenemos la distribución
+        PatronGastoDTO patronGastoDTO = PatronGastoDTO.fromEntity(patronGasto);
+        return patronGastoDTO.getDistribucionGastos();
     }
-
 
     /**
      * Genera un número de cuenta único de 10 dígitos

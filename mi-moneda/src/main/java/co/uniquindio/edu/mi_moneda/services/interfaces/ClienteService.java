@@ -1,5 +1,6 @@
 package co.uniquindio.edu.mi_moneda.services.interfaces;
 
+import co.uniquindio.edu.mi_moneda.dto.ClienteDTO;
 import co.uniquindio.edu.mi_moneda.model.Cliente;
 
 public interface ClienteService {
@@ -10,7 +11,6 @@ public interface ClienteService {
      * @param nombre Nombre completo del cliente
      * @param email Correo electrónico del cliente
      * @param password Contraseña del cliente
-     * @return Cliente registrado
      * @throws RuntimeException Si ya existe un cliente con el mismo email o ID
      */
     void registrarCliente(String id, String nombre, String email, String password);
@@ -31,6 +31,14 @@ public interface ClienteService {
      * @throws Exception Si no se encuentra el cliente
      */
     Cliente buscarClientePorId(String id) throws Exception;
+
+    /**
+     * Busca un cliente por su ID y lo convierte a DTO
+     * @param id ID del cliente
+     * @return ClienteDTO con la información básica del cliente
+     * @throws Exception Si no se encuentra el cliente
+     */
+    ClienteDTO buscarClienteDTOPorId(String id) throws Exception;
 
     /**
      * Busca un cliente por su email

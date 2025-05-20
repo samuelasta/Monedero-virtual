@@ -1,11 +1,15 @@
 package co.uniquindio.edu.mi_moneda.services.implementation;
 
+import co.uniquindio.edu.mi_moneda.dto.ClienteDTO;
+import co.uniquindio.edu.mi_moneda.dto.MonederoDTO;
+import co.uniquindio.edu.mi_moneda.dto.PuntosDTO;
 import co.uniquindio.edu.mi_moneda.listasPropias.DoubleList;
 import co.uniquindio.edu.mi_moneda.listasPropias.QueueTransactionProgramed;
 import co.uniquindio.edu.mi_moneda.listasPropias.SimpleList;
 import co.uniquindio.edu.mi_moneda.model.Cliente;
 import co.uniquindio.edu.mi_moneda.model.Monedero;
 import co.uniquindio.edu.mi_moneda.model.Puntos;
+import co.uniquindio.edu.mi_moneda.model.Transaccion;
 import co.uniquindio.edu.mi_moneda.model.enums.TipoMonedero;
 import co.uniquindio.edu.mi_moneda.repository.ClienteRepository;
 import co.uniquindio.edu.mi_moneda.repository.MonederoRepository;
@@ -17,6 +21,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
@@ -72,6 +78,7 @@ public class ClienteServiceImpl implements ClienteService {
             puntos.setId(UUID.randomUUID().toString());
             puntos.setCliente(clienteGuardado);
             puntos.setPuntosAcumulados(0);
+            puntos.setHistorialPuntos(new SimpleList<>());
 
             // Guardamos los puntos
             puntosRepository.save(puntos);
@@ -85,39 +92,39 @@ public class ClienteServiceImpl implements ClienteService {
             Monedero monederoPrincipal = Monedero.builder()
                     .id(UUID.randomUUID().toString())
                     .nombre("Monedero Principal")
-                    //.propietarioId(clienteGuardado.getId())
                     .propietario(clienteGuardado)
                     .tipoMonedero(TipoMonedero.CORRIENTE)
                     .saldo(0.0)
                     .numeroCuenta(numeroCuenta)
                     .fechaCreacion(LocalDateTime.now())
                     .activo(true)
+                    .historialTransacciones(new DoubleList<>())
                     .build();
 
             String numeroAhorros = generarNumeroCuentaUnico();
             Monedero monederoAhorros = Monedero.builder()
                     .id(UUID.randomUUID().toString())
                     .nombre("Monedero Ahorros")
-                    //.propietarioId(clienteGuardado.getId())
                     .propietario(clienteGuardado)
                     .tipoMonedero(TipoMonedero.AHORRO)
                     .saldo(0.0)
                     .numeroCuenta(numeroAhorros)
                     .fechaCreacion(LocalDateTime.now())
                     .activo(true)
+                    .historialTransacciones(new DoubleList<>())
                     .build();
 
             String numeroNomina = generarNumeroCuentaUnico();
             Monedero monederoNomina = Monedero.builder()
                     .id(UUID.randomUUID().toString())
                     .nombre("Monedero Nomina")
-                    //.propietarioId(clienteGuardado.getId())
                     .propietario(clienteGuardado)
                     .tipoMonedero(TipoMonedero.NOMINA)
                     .saldo(0.0)
                     .numeroCuenta(numeroNomina)
                     .fechaCreacion(LocalDateTime.now())
                     .activo(true)
+                    .historialTransacciones(new DoubleList<>())
                     .build();
 
             // Guardamos los monederos
@@ -187,6 +194,37 @@ public class ClienteServiceImpl implements ClienteService {
         }
 
         return clienteOpt.get();
+    }
+
+    @Override
+    public ClienteDTO buscarClienteDTOPorId(String id) throws Exception {
+        Cliente cliente = buscarClientePorId(id);
+
+        // Convertir a DTO con información básica
+        ClienteDTO dto = new ClienteDTO();
+        dto.setId(cliente.getId());
+        dto.setNombre(cliente.getNombre());
+        dto.setEmail(cliente.getEmail());
+        dto.setRango(cliente.getRango());
+
+        // Convertir Puntos a DTO
+        if (cliente.getPuntos() != null) {
+            dto.setPuntos(PuntosDTO.fromEntity(cliente.getPuntos()));
+        }
+
+        // Convertir Monederos a lista de DTOs
+        List<MonederoDTO> monederosDTO = new ArrayList<>();
+        SimpleList<Monedero> monederosList = cliente.getMonederos();
+        if (monederosList != null && !monederosList.isEmpty()) {
+            co.uniquindio.edu.mi_moneda.listasPropias.Node<Monedero> current = monederosList.getFirstNode();
+            while (current != null) {
+                monederosDTO.add(MonederoDTO.fromEntity(current.getValue()));
+                current = current.getNextNodo();
+            }
+        }
+        dto.setMonederos(monederosDTO);
+
+        return dto;
     }
 
     @Override
