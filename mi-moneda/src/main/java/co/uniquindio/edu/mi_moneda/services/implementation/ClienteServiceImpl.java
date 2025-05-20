@@ -40,99 +40,123 @@ public class ClienteServiceImpl implements ClienteService {
     private EmailService emailService;
 
     @Override
-    public Cliente registrarCliente(String id, String nombre, String email, String password) {
-        // Verificar si ya existe un cliente con ese email
-        if (clienteRepository.existsByEmail(email)) {
-            throw new RuntimeException("Ya existe un usuario con ese correo electrónico");
+    public void registrarCliente(String id, String nombre, String email, String password) {
+        try {
+            // Verificar si ya existe un cliente con ese email
+            if (clienteRepository.existsByEmail(email)) {
+                throw new RuntimeException("Ya existe un usuario con ese correo electrónico");
+            }
+
+            // Verificar si ya existe un cliente con ese ID
+            if (id != null && !id.trim().isEmpty() && clienteRepository.existsById(id)) {
+                throw new RuntimeException("Ya existe un usuario con ese ID");
+            }
+
+            // Crear nuevo cliente
+            Cliente cliente = new Cliente();
+            cliente.setId(id != null && !id.trim().isEmpty() ? id : UUID.randomUUID().toString());
+            cliente.setNombre(nombre);
+            cliente.setEmail(email);
+            cliente.setPassword(passwordEncoder.encode(password));
+            cliente.setRango("BRONCE");
+            cliente.setMonederos(new SimpleList<>());
+            cliente.setHistorialTransacciones(new DoubleList<>());
+            cliente.setTransaccionesProgramadas(new QueueTransactionProgramed());
+            cliente.setNotificaciones(new SimpleList<>());
+
+            // Guardamos primero el cliente
+            Cliente clienteGuardado = clienteRepository.save(cliente);
+
+            // Creamos y asociamos los puntos
+            Puntos puntos = new Puntos();
+            puntos.setId(UUID.randomUUID().toString());
+            puntos.setCliente(clienteGuardado);
+            puntos.setPuntosAcumulados(0);
+
+            // Guardamos los puntos
+            puntosRepository.save(puntos);
+
+            // Actualizamos el cliente con la referencia a puntos
+            clienteGuardado.setPuntos(puntos);
+            clienteGuardado = clienteRepository.save(clienteGuardado);
+
+            // Creamos los monederos con referencias al cliente guardado
+            String numeroCuenta = generarNumeroCuentaUnico();
+            Monedero monederoPrincipal = Monedero.builder()
+                    .id(UUID.randomUUID().toString())
+                    .nombre("Monedero Principal")
+                    //.propietarioId(clienteGuardado.getId())
+                    .propietario(clienteGuardado)
+                    .tipoMonedero(TipoMonedero.CORRIENTE)
+                    .saldo(0.0)
+                    .numeroCuenta(numeroCuenta)
+                    .fechaCreacion(LocalDateTime.now())
+                    .activo(true)
+                    .build();
+
+            String numeroAhorros = generarNumeroCuentaUnico();
+            Monedero monederoAhorros = Monedero.builder()
+                    .id(UUID.randomUUID().toString())
+                    .nombre("Monedero Ahorros")
+                    //.propietarioId(clienteGuardado.getId())
+                    .propietario(clienteGuardado)
+                    .tipoMonedero(TipoMonedero.AHORRO)
+                    .saldo(0.0)
+                    .numeroCuenta(numeroAhorros)
+                    .fechaCreacion(LocalDateTime.now())
+                    .activo(true)
+                    .build();
+
+            String numeroNomina = generarNumeroCuentaUnico();
+            Monedero monederoNomina = Monedero.builder()
+                    .id(UUID.randomUUID().toString())
+                    .nombre("Monedero Nomina")
+                    //.propietarioId(clienteGuardado.getId())
+                    .propietario(clienteGuardado)
+                    .tipoMonedero(TipoMonedero.NOMINA)
+                    .saldo(0.0)
+                    .numeroCuenta(numeroNomina)
+                    .fechaCreacion(LocalDateTime.now())
+                    .activo(true)
+                    .build();
+
+            // Guardamos los monederos
+            monederoPrincipal = monederoRepository.save(monederoPrincipal);
+            monederoAhorros = monederoRepository.save(monederoAhorros);
+            monederoNomina = monederoRepository.save(monederoNomina);
+
+            // Añadimos los monederos a la lista del cliente
+            SimpleList<Monedero> monederos = new SimpleList<>();
+            monederos.add(monederoPrincipal);
+            monederos.add(monederoAhorros);
+            monederos.add(monederoNomina);
+            clienteGuardado.setMonederos(monederos);
+
+            // Guardamos el cliente actualizado
+            clienteRepository.save(clienteGuardado);
+
+            // Enviamos el email con manejo de excepciones
+            try {
+                String formattedPrincipal = monederoPrincipal.getNumeroCuentaFormateado() != null ?
+                        monederoPrincipal.getNumeroCuentaFormateado() : numeroCuenta;
+                String formattedAhorros = monederoAhorros.getNumeroCuentaFormateado() != null ?
+                        monederoAhorros.getNumeroCuentaFormateado() : numeroAhorros;
+                String formattedNomina = monederoNomina.getNumeroCuentaFormateado() != null ?
+                        monederoNomina.getNumeroCuentaFormateado() : numeroNomina;
+
+                emailService.sendWelcomeEmail(email, nombre, formattedPrincipal,
+                        formattedAhorros, formattedNomina);
+            } catch (Exception e) {
+                // Log el error pero permitir que el registro continúe
+                System.err.println("Error al enviar email de bienvenida: " + e.getMessage());
+                e.printStackTrace();
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error durante el registro del cliente: " + e.getMessage());
+            e.printStackTrace();
+            throw e; // Re-lanzar la excepción para que sea manejada por el controlador
         }
-
-        // Verificar si ya existe un cliente con ese ID
-        if (id != null && !id.trim().isEmpty() && clienteRepository.existsById(id)) {
-            throw new RuntimeException("Ya existe un usuario con ese ID");
-        }
-
-        // Crear nuevo cliente
-        Cliente cliente = new Cliente();
-        cliente.setId(id != null && !id.trim().isEmpty() ? id : UUID.randomUUID().toString());
-        cliente.setNombre(nombre);
-        cliente.setEmail(email);
-        cliente.setPassword(passwordEncoder.encode(password));
-        cliente.setRango("BRONCE");
-        cliente.setMonederos(new SimpleList<>());
-        cliente.setHistorialTransacciones(new DoubleList<>());
-        cliente.setTransaccionesProgramadas(new QueueTransactionProgramed());
-        cliente.setNotificaciones(new SimpleList<>());
-
-        // Creamos y asociamos los puntos
-        Puntos puntos = new Puntos();
-        puntos.setId(UUID.randomUUID().toString());
-        puntos.setCliente(cliente);
-        puntos.setPuntosAcumulados(0);
-        puntos.setHistorialPuntos(new SimpleList<>());
-        cliente.setPuntos(puntos);
-
-        // Guardamos el cliente y puntos en la base de datos
-        puntosRepository.save(puntos);
-        Cliente clienteGuardado = clienteRepository.save(cliente);
-
-        // Creamos un monedero principal con número de cuenta único
-        String numeroCuenta = generarNumeroCuentaUnico();
-        Monedero monederoPrincipal = Monedero.builder()
-                .id(numeroCuenta)
-                .nombre("Monedero Principal")
-                .propietario(clienteGuardado)
-                .tipoMonedero(TipoMonedero.CORRIENTE)
-                .saldo(0.0)
-                .numeroCuenta(numeroCuenta)
-                .fechaCreacion(LocalDateTime.now())
-                .activo(true)
-                .historialTransacciones(new DoubleList<>())
-                .build();
-
-        // Le creamos un monedero de ahorros
-        String numeroAhorros = generarNumeroCuentaUnico();
-        Monedero monederoAhorros = Monedero.builder()
-                .id(numeroAhorros)
-                .nombre("Monedero Ahorros")
-                .propietario(clienteGuardado)
-                .tipoMonedero(TipoMonedero.AHORRO)
-                .saldo(0.0)
-                .numeroCuenta(numeroCuenta)
-                .fechaCreacion(LocalDateTime.now())
-                .activo(true)
-                .historialTransacciones(new DoubleList<>())
-                .build();
-
-        // Creamos un monedero principal con número de cuenta único
-        String numeroNomina = generarNumeroCuentaUnico();
-        Monedero monederoNomina = Monedero.builder()
-                .id(numeroNomina)
-                .nombre("Monedero Nomina")
-                .propietario(clienteGuardado)
-                .tipoMonedero(TipoMonedero.NOMINA)
-                .saldo(0.0)
-                .numeroCuenta(numeroCuenta)
-                .fechaCreacion(LocalDateTime.now())
-                .activo(true)
-                .historialTransacciones(new DoubleList<>())
-                .build();
-
-        emailService.sendWelcomeEmail(email, nombre, monederoPrincipal.getNumeroCuentaFormateado(), monederoAhorros.getNumeroCuentaFormateado(), monederoNomina.getNumeroCuentaFormateado());
-        monederoRepository.save(monederoPrincipal);
-        monederoRepository.save(monederoAhorros);
-        monederoRepository.save(monederoNomina);
-
-        // Añadimos el monedero a la lista del cliente
-        SimpleList<Monedero> monederos = cliente.getMonederos();
-        monederos.add(monederoPrincipal);
-        monederos.add(monederoAhorros);
-        monederos.add(monederoNomina);
-        cliente.setMonederos(monederos);
-        clienteRepository.save(cliente);
-        System.out.println("cliente guardado en la base de datos");
-
-
-        return clienteGuardado;
     }
 
     @Override
@@ -182,7 +206,7 @@ public class ClienteServiceImpl implements ClienteService {
     }
 
     /**
-     * Genera un número de cuenta único de 16 dígitos
+     * Genera un número de cuenta único de 10 dígitos
      * @return Número de cuenta único
      */
     private String generarNumeroCuentaUnico() {
@@ -191,7 +215,7 @@ public class ClienteServiceImpl implements ClienteService {
         boolean esUnico = false;
 
         do {
-            // Generar número de 16 dígitos
+            // Generar número de 10 dígitos
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 10; i++) {
                 sb.append(random.nextInt(10));

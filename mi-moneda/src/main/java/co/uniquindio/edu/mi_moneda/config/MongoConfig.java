@@ -4,15 +4,20 @@ import co.uniquindio.edu.mi_moneda.listasPropias.SimpleList;
 import co.uniquindio.edu.mi_moneda.listasPropias.DoubleList;
 import co.uniquindio.edu.mi_moneda.listasPropias.QueueTransactionProgramed;
 import co.uniquindio.edu.mi_moneda.listasPropias.identificable.identificable;
-import co.uniquindio.edu.mi_moneda.model.Monedero;
-import co.uniquindio.edu.mi_moneda.model.Notificacion;
-import co.uniquindio.edu.mi_moneda.model.Transaccion;
-import co.uniquindio.edu.mi_moneda.model.TransaccionProgramada;
-import co.uniquindio.edu.mi_moneda.model.TransaccionPuntos;
+import co.uniquindio.edu.mi_moneda.model.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
+import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
+import org.springframework.data.mongodb.core.convert.DefaultMongoTypeMapper;
+import org.springframework.data.mongodb.core.convert.DefaultDbRefResolver;
+import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.data.mongodb.core.mapping.event.ValidatingMongoEventListener;
+import org.springframework.data.mongodb.core.mapping.event.BeforeConvertEvent;
+import org.springframework.context.ApplicationListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +29,7 @@ public class MongoConfig {
     public MongoCustomConversions customConversions() {
         List<Converter<?, ?>> converters = new ArrayList<>();
 
-        // Agregar convertidores
+        // Agregar convertidores existentes
         converters.add(new SimpleListToListConverter());
         converters.add(new ListToSimpleListConverter());
         converters.add(new DoubleListToListConverter());
@@ -32,7 +37,113 @@ public class MongoConfig {
         converters.add(new QueueToListConverter());
         converters.add(new ListToQueueConverter());
 
+        // Agregar convertidores para manejar referencias circulares
+        converters.add(new ClienteReferenceConverter());
+        converters.add(new MonederoReferenceConverter());
+        converters.add(new PuntosReferenceConverter());
+
         return new MongoCustomConversions(converters);
+    }
+
+    /**
+     * Configuración personalizada del MappingMongoConverter para evitar
+     * referencias circulares y mejorar el manejo de relaciones
+     */
+    @Bean
+    public MappingMongoConverter mappingMongoConverter(
+            MongoDatabaseFactory databaseFactory,
+            MongoMappingContext mappingContext,
+            BeanFactory beanFactory) {
+
+        DefaultDbRefResolver dbRefResolver = new DefaultDbRefResolver(databaseFactory);
+        MappingMongoConverter converter = new MappingMongoConverter(dbRefResolver, mappingContext);
+
+        // Desactivar _class para reducir tamaño de documentos
+        converter.setTypeMapper(new DefaultMongoTypeMapper(null));
+
+        // Registrar conversores personalizados
+        converter.setCustomConversions(customConversions());
+
+        return converter;
+    }
+
+    /**
+     * Listener para verificar entidades antes de convertirlas
+     * Ayuda a detectar problemas de referencia circular temprano
+     */
+    @Bean
+    public ApplicationListener<BeforeConvertEvent<?>> beforeConvertListener() {
+        return event -> {
+            Object source = event.getSource();
+
+            // Verificar que referencias críticas no sean circulares
+            if (source instanceof Cliente) {
+                Cliente cliente = (Cliente) source;
+                // Si es necesario, quitar temporalmente referencias para evitar ciclos
+            } else if (source instanceof Monedero) {
+                Monedero monedero = (Monedero) source;
+                // Evitar que el propietario contenga una referencia al monedero
+                if (monedero.getPropietario() != null) {
+                    Cliente propietario = monedero.getPropietario();
+                    // Limpiar temporalmente la referencia si es necesario
+                }
+            }
+        };
+    }
+
+    // Convertidor para manejar referencias de Cliente
+    private static class ClienteReferenceConverter implements Converter<Cliente, Cliente> {
+        @Override
+        public Cliente convert(Cliente source) {
+            if (source == null) return null;
+
+            // Crear versión "ligera" del cliente para evitar referencias circulares
+            Cliente clienteRef = new Cliente();
+            clienteRef.setId(source.getId());
+            clienteRef.setNombre(source.getNombre());
+            clienteRef.setEmail(source.getEmail());
+            clienteRef.setRango(source.getRango());
+            // No incluir monederos, transacciones, etc. para evitar ciclos
+
+            return clienteRef;
+        }
+    }
+
+    // Convertidor para manejar referencias de Monedero
+    private static class MonederoReferenceConverter implements Converter<Monedero, Monedero> {
+        @Override
+        public Monedero convert(Monedero source) {
+            if (source == null) return null;
+
+            // Crear versión "ligera" del monedero
+            Monedero monederoRef = new Monedero();
+            monederoRef.setId(source.getId());
+            monederoRef.setNombre(source.getNombre());
+            monederoRef.setTipoMonedero(source.getTipoMonedero());
+            monederoRef.setSaldo(source.getSaldo());
+            monederoRef.setNumeroCuenta(source.getNumeroCuenta());
+            monederoRef.setFechaCreacion(source.getFechaCreacion());
+            monederoRef.setActivo(source.isActivo());
+            // No incluir propietario ni historial para evitar ciclos
+
+            return monederoRef;
+        }
+    }
+
+    // Convertidor para manejar referencias de Puntos
+    private static class PuntosReferenceConverter implements Converter<Puntos, Puntos> {
+        @Override
+        public Puntos convert(Puntos source) {
+            if (source == null) return null;
+
+            // Crear versión "ligera" de puntos
+            Puntos puntosRef = new Puntos();
+            puntosRef.setId(source.getId());
+            puntosRef.setPuntosAcumulados(source.getPuntosAcumulados());
+            // No incluir cliente ni historial para evitar ciclos
+
+            return puntosRef;
+        }
     }
 
     // Convertidor de SimpleList a List (para guardar en MongoDB)

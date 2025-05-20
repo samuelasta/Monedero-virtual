@@ -5,9 +5,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 //
 @Data
-public class DoubleList<T extends identificable>{
+public class DoubleList<T extends identificable> {
+
     private int size;
     private DoubleNode<T> firstNode;
     private DoubleNode<T> lastNode;
@@ -78,4 +81,5 @@ public class DoubleList<T extends identificable>{
     public boolean isEmpty() {
         return firstNode == null;
     }
+
 }

@@ -3,6 +3,8 @@ package co.uniquindio.edu.mi_moneda.repository;
 import co.uniquindio.edu.mi_moneda.model.Transaccion;
 import co.uniquindio.edu.mi_moneda.model.TransaccionPuntos;
 import co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccionPuntos;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

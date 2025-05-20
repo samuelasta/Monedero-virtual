@@ -4,12 +4,14 @@ import co.uniquindio.edu.mi_moneda.listasPropias.identificable.identificable;
 import lombok.Data;
 
 import java.util.NoSuchElementException;
+import java.util.UUID;
 
 //  List<Monedero> monederos
 //  List<TransaccionPuntos> historialPuntos
 
 @Data
-public class SimpleList<T extends identificable>{
+public class SimpleList<T extends identificable> {
+
     private int size;
     private Node<T> firstNode;
     private Node<T> lastNode;
@@ -67,4 +69,6 @@ public class SimpleList<T extends identificable>{
     public boolean isEmpty() {
         return firstNode == null;
     }
+
+
 }

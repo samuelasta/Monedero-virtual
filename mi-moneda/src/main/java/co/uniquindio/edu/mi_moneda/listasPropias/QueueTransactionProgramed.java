@@ -1,11 +1,15 @@
 package co.uniquindio.edu.mi_moneda.listasPropias;
 
+import co.uniquindio.edu.mi_moneda.listasPropias.identificable.identificable;
 import co.uniquindio.edu.mi_moneda.model.TransaccionProgramada;
 import lombok.Data;
 
+import java.util.UUID;
+
 
 @Data
-public class QueueTransactionProgramed {
+public class QueueTransactionProgramed  {
+
 
     private int size;
     private NodeQueue firstNode;
@@ -90,5 +94,7 @@ public class QueueTransactionProgramed {
         public boolean isEmpty () {
             return firstNode == null;
         }
-    }
+
+
+}
 

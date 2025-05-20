@@ -9,7 +9,7 @@ import co.uniquindio.edu.mi_moneda.listasPropias.NodeQueue;
 import co.uniquindio.edu.mi_moneda.listasPropias.OwnMap;
 import co.uniquindio.edu.mi_moneda.model.*;
 import co.uniquindio.edu.mi_moneda.model.enums.CategoriaGasto;
-import co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion;
+import co.uniquindio.edu.mi_moneda.model.enums.TipoMonedero;
 import co.uniquindio.edu.mi_moneda.repository.*;
 import co.uniquindio.edu.mi_moneda.services.interfaces.ClienteService;
 import co.uniquindio.edu.mi_moneda.services.interfaces.PuntosService;
@@ -19,6 +19,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import jakarta.servlet.http.HttpSession;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDateTime;
@@ -45,6 +47,9 @@ public class DashboardController {
 
     @Autowired
     private PuntosRepository puntosRepository;
+
+    @Autowired
+    private ClienteRepository clienteRepository;
 
     @Autowired
     private BeneficioRepository beneficioRepository;
@@ -139,10 +144,74 @@ public class DashboardController {
             Cliente cliente = clienteService.buscarClientePorId(clienteId);
             model.addAttribute("cliente", cliente);
 
+            // Convertir la SimpleList a una List estándar de Java
+            List<Monedero> monederos = new ArrayList<>();
+            SimpleList<Monedero> monederosList = cliente.getMonederos();
+            if (monederosList != null && !monederosList.isEmpty()) {
+                Node<Monedero> current = monederosList.getFirstNode();
+                while (current != null) {
+                    monederos.add(current.getValue());
+                    current = current.getNextNodo();
+                }
+            }
+
+            model.addAttribute("monederos", monederos);
+
+            List<Transaccion> transaccionesRecientes = new ArrayList<>();
+            model.addAttribute("transaccionesRecientes", transaccionesRecientes);
+
             return "wallets";
         } catch (Exception e) {
+            e.printStackTrace();
             session.invalidate();
+            return "redirect:/login-page?error=session";
+        }
+    }
+
+    @PostMapping("/wallets/new")
+    public String crearNuevoMonedero(
+            @RequestParam String nombre,
+            @RequestParam(required = false) String descripcion,
+            @RequestParam double saldoInicial,
+            @RequestParam TipoMonedero tipoMonedero,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+
+        String clienteId = (String) session.getAttribute("clienteId");
+        if (clienteId == null) {
             return "redirect:/login-page";
+        }
+
+        try {
+            Cliente cliente = clienteService.buscarClientePorId(clienteId);
+
+            // Creamos un nuevo monedero
+            Monedero nuevoMonedero = new Monedero();
+            nuevoMonedero.setId(UUID.randomUUID().toString());
+            nuevoMonedero.setNombre(nombre);
+            nuevoMonedero.setPropietario(cliente);
+            nuevoMonedero.setTipoMonedero(tipoMonedero);
+            nuevoMonedero.setSaldo(saldoInicial);
+            nuevoMonedero.setNumeroCuenta(generarNumeroCuentaUnico());
+            nuevoMonedero.setFechaCreacion(LocalDateTime.now());
+            nuevoMonedero.setActivo(true);
+            nuevoMonedero.setHistorialTransacciones(new DoubleList<>());
+
+            // Guardar el monedero en la base de datos
+            monederoRepository.save(nuevoMonedero);
+
+            // Agregar el monedero a la lista de monederos del cliente
+            SimpleList<Monedero> monederos = cliente.getMonederos();
+            monederos.add(nuevoMonedero);
+            cliente.setMonederos(monederos);
+            clienteRepository.save(cliente);
+
+
+            return "redirect:/wallets";
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Error al crear el monedero: " + e.getMessage());
+            return "redirect:/wallets";
         }
     }
 
@@ -556,5 +625,31 @@ public class DashboardController {
         }
 
         return resultado;
+    }
+
+
+    /**
+     * Genera un número de cuenta único de 10 dígitos
+     * @return Número de cuenta único
+     */
+    private String generarNumeroCuentaUnico() {
+        Random random = new Random();
+        String numeroCuenta;
+        boolean esUnico = false;
+
+        do {
+            // Generar número de 10 dígitos
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 10; i++) {
+                sb.append(random.nextInt(10));
+            }
+            numeroCuenta = sb.toString();
+
+            // Verificar si ya existe un monedero con ese número
+            esUnico = !monederoRepository.existsByNumeroCuenta(numeroCuenta);
+
+        } while (!esUnico);
+
+        return numeroCuenta;
     }
 }

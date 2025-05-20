@@ -37,6 +37,8 @@ public class Cliente implements identificable {
 
     private String rango;
 
+    @JsonManagedReference
+    @Transient
     private SimpleList<Monedero> monederos = new SimpleList<>();
     private DoubleList<Transaccion> historialTransacciones = new DoubleList<>();
     private QueueTransactionProgramed transaccionesProgramadas = new QueueTransactionProgramed();

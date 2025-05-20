@@ -1,10 +1,15 @@
 package co.uniquindio.edu.mi_moneda.listasPropias;
 
+import co.uniquindio.edu.mi_moneda.listasPropias.identificable.identificable;
 import co.uniquindio.edu.mi_moneda.model.enums.CategoriaGasto;
 import lombok.Data;
 
+import java.util.UUID;
+
 @Data
 public class OwnMap {
+
+    private String id = UUID.randomUUID().toString();
     private int size;
     private NodeMap firstNode;
     private NodeMap lastNode;
@@ -59,6 +64,5 @@ public class OwnMap {
         }
         return false;
     }
-
 
 }

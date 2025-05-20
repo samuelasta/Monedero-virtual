@@ -13,7 +13,7 @@ public interface ClienteService {
      * @return Cliente registrado
      * @throws RuntimeException Si ya existe un cliente con el mismo email o ID
      */
-    Cliente registrarCliente(String id, String nombre, String email, String password);
+    void registrarCliente(String id, String nombre, String email, String password);
 
     /**
      * Autentica un cliente en el sistema

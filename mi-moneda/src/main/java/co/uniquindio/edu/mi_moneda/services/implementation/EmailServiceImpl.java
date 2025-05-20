@@ -52,6 +52,9 @@ public class EmailServiceImpl implements EmailService {
             helper.setSubject(subject);
             helper.setText(content, true); // true indica que el contenido es HTML
 
+            // Añade la dirección del que lo envía
+            helper.setFrom("virtualwalletbilleteravirtual@gmail.com");
+
             mailSender.send(message);
         } catch (MessagingException e) {
             // Log el error y manejo de excepciones

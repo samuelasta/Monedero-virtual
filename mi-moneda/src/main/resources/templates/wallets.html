@@ -206,10 +206,23 @@
         </div>
       </nav>
 
+      <!-- Mensaje de éxito o error -->
+      <div class="alert alert-success alert-dismissible fade show" role="alert" th:if="${mostrarMensaje}">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <span th:text="${mensaje}">Operación exitosa</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+
+      <div class="alert alert-danger alert-dismissible fade show" role="alert" th:if="${mostrarError}">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span th:text="${error}">Ha ocurrido un error</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+
       <!-- Wallets Section -->
       <div class="row">
         <!-- Monederos dinámicos desde la base de datos -->
-        <div class="col-md-6 col-lg-4 mb-4" th:each="monedero, iterStat : ${cliente.monederos.firstNode}" th:if="${monedero != null}">
+        <div class="col-md-6 col-lg-4 mb-4" th:each="monedero, iterStat : ${clienteMonederos}" th:if="${monedero != null}">
           <div class="card wallet-card h-100" th:classappend="${iterStat.index % 3 == 0 ? 'wallet-primary' : (iterStat.index % 3 == 1 ? 'wallet-secondary' : 'wallet-tertiary')}" data-bs-toggle="modal" data-bs-target="#walletDetailsModal">
             <div class="card-body position-relative">
               <div class="wallet-actions">
@@ -231,11 +244,11 @@
                   </div>
                 </div>
               </div>
-              <h6 class="card-subtitle mb-1" th:text="${monedero.value.nombre}">Monedero Principal</h6>
-              <div class="wallet-number" th:text="'**** **** **** ' + ${#strings.substring(monedero.value.id, 0, 4)}">**** **** **** 1234</div>
-              <div class="wallet-balance" th:text="'$' + ${#numbers.formatDecimal(monedero.value.saldo, 0, 'COMMA', 2, 'POINT')}">$5,250.00</div>
+              <h6 class="card-subtitle mb-1" th:text="${monedero.nombre}">Monedero Principal</h6>
+              <div class="wallet-number" th:text="${monedero.numeroCuentaFormateado}">**** **** **** 1234</div>
+              <div class="wallet-balance" th:text="'$' + ${#numbers.formatDecimal(monedero.saldo, 0, 'COMMA', 2, 'POINT')}">$5,250.00</div>
               <div class="wallet-footer">
-                <div>Tipo: <span th:text="${monedero.value.tipoMonedero}">Principal</span></div>
+                <div>Tipo: <span th:text="${monedero.tipoMonedero}">Principal</span></div>
                 <div><i class="bi bi-check-circle-fill"></i> Activo</div>
               </div>
             </div>
@@ -243,7 +256,7 @@
         </div>
 
         <!-- Mensaje si no hay monederos -->
-        <div class="col-md-12 mb-4" th:if="${cliente.monederos == null || cliente.monederos.isEmpty()}">
+        <div class="col-md-12 mb-4" th:if="${clienteMonederos == null || clienteMonederos.isEmpty()}">
           <div class="alert alert-info">
             No tienes monederos creados. ¡Crea tu primer monedero!
           </div>
@@ -318,58 +331,41 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <form id="newWalletForm">
+        <form id="newWalletForm" th:action="@{/wallets/new}" method="post">
           <div class="mb-3">
             <label for="walletName" class="form-label">Nombre del Monedero</label>
-            <input type="text" class="form-control" id="walletName" placeholder="Ej: Monedero de Viajes" required>
+            <input type="text" class="form-control" id="walletName" name="nombre" placeholder="Ej: Monedero de Viajes" required>
           </div>
           <div class="mb-3">
             <label for="walletDescription" class="form-label">Descripción (Opcional)</label>
-            <textarea class="form-control" id="walletDescription" rows="2" placeholder="Breve descripción del propósito de este monedero"></textarea>
+            <textarea class="form-control" id="walletDescription" name="descripcion" rows="2" placeholder="Breve descripción del propósito de este monedero"></textarea>
           </div>
           <div class="mb-3">
             <label for="initialBalance" class="form-label">Saldo Inicial</label>
             <div class="input-group">
               <span class="input-group-text">$</span>
-              <input type="number" class="form-control" id="initialBalance" min="0" step="0.01" placeholder="0.00" required>
+              <input type="number" class="form-control" id="initialBalance" name="saldoInicial" min="0" step="0.01" placeholder="0.00" required>
             </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Tipo de Monedero</label>
             <div class="d-flex gap-3">
               <div class="form-check">
-                <input class="form-check-input" type="radio" name="walletType" id="walletTypePersonal" value="personal" checked>
-                <label class="form-check-label" for="walletTypePersonal">
-                  Personal
+                <input class="form-check-input" type="radio" name="tipoMonedero" id="walletTypeAHORRO" value="AHORRO" checked>
+                <label class="form-check-label" for="walletTypeAHORRO">
+                  Ahorro
                 </label>
               </div>
               <div class="form-check">
-                <input class="form-check-input" type="radio" name="walletType" id="walletTypeBusiness" value="business">
-                <label class="form-check-label" for="walletTypeBusiness">
-                  Negocio
-                </label>
-              </div>
-            </div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Color del Monedero</label>
-            <div class="d-flex gap-2">
-              <div class="form-check">
-                <input class="form-check-input" type="radio" name="walletColor" id="colorBlue" value="blue" style="background-color: #2575fc;" checked>
-                <label class="form-check-label" for="colorBlue">
-                  Azul
+                <input class="form-check-input" type="radio" name="tipoMonedero" id="walletTypeCORRIENTE" value="CORRIENTE">
+                <label class="form-check-label" for="walletTypeCORRIENTE">
+                  Corriente
                 </label>
               </div>
               <div class="form-check">
-                <input class="form-check-input" type="radio" name="walletColor" id="colorGreen" value="green" style="background-color: #20c997;">
-                <label class="form-check-label" for="colorGreen">
-                  Verde
-                </label>
-              </div>
-              <div class="form-check">
-                <input class="form-check-input" type="radio" name="walletColor" id="colorOrange" value="orange" style="background-color: #fd7e14;">
-                <label class="form-check-label" for="colorOrange">
-                  Naranja
+                <input class="form-check-input" type="radio" name="tipoMonedero" id="walletTypeNOMINA" value="NOMINA">
+                <label class="form-check-label" for="walletTypeNOMINA">
+                  Nómina
                 </label>
               </div>
             </div>
@@ -451,7 +447,7 @@
   document.addEventListener('DOMContentLoaded', function() {
     // Datos de monederos desde Thymeleaf
     const cliente = /*[[${cliente}]]*/ {};
-    const monederos = /*[[${cliente.monederos}]]*/ {};
+    const monederos = /*[[${clienteMonederos}]]*/ [];
     const transaccionesRecientes = /*[[${transaccionesRecientes}]]*/ [];
 
     // Manejador para el modal de detalles del monedero

@@ -3,6 +3,7 @@ package co.uniquindio.edu.mi_moneda.model;
 import co.uniquindio.edu.mi_moneda.listasPropias.DoubleList;
 import co.uniquindio.edu.mi_moneda.listasPropias.identificable.identificable;
 import co.uniquindio.edu.mi_moneda.model.enums.TipoMonedero;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,6 +25,7 @@ public class Monedero implements identificable {
     private String id;
 
     private String nombre;
+    @JsonBackReference
     private Cliente propietario;
     private TipoMonedero tipoMonedero;
     private double saldo;

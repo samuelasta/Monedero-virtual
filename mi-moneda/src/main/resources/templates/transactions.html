@@ -378,26 +378,31 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="depositForm">
+                <form id="depositForm" th:action="@{/transactions/process-deposit}" method="post">
                     <div class="mb-3">
                         <label for="depositWallet" class="form-label">Monedero Destino</label>
-                        <select class="form-select" id="depositWallet" required>
+                        <select class="form-select" id="depositWallet" name="idMonedero" required>
                             <option value="" selected disabled>Seleccionar monedero</option>
                             <option value="1">Monedero Principal</option>
                             <option value="2">Monedero Ahorros</option>
                             <option value="3">Monedero Gastos</option>
+                            <!-- Iterar sobre los monederos del cliente -->
+                            <option th:each="monedero : ${cliente.monederos.firstNode}"
+                                    th:if="${monedero != null}"
+                                    th:value="${monedero.value.id}"
+                                    th:text="${monedero.value.nombre}">Monedero Principal</option>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label for="depositAmount" class="form-label">Monto a Depositar</label>
                         <div class="input-group">
                             <span class="input-group-text">$</span>
-                            <input type="number" class="form-control" id="depositAmount" min="0.01" step="0.01" placeholder="0.00" required>
+                            <input type="number" class="form-control" id="depositAmount" name="monto" min="0.01" step="0.01" placeholder="0.00" required>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label for="depositMethod" class="form-label">Método de Depósito</label>
-                        <select class="form-select" id="depositMethod" required>
+                        <select class="form-select" id="depositMethod" name= "metodo" required>
                             <option value="" selected disabled>Seleccionar método</option>
                             <option value="cash">Efectivo</option>
                             <option value="bank">Transferencia Bancaria</option>
@@ -415,6 +420,18 @@
                 <button type="submit" form="depositForm" class="btn btn-success">Depositar</button>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Alertas para mensajes de éxito o error -->
+<div class="container mt-3">
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 </div>
 
