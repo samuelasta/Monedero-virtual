@@ -170,6 +170,18 @@
                 </div>
             </nav>
 
+            <!-- Alert Messages -->
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
             <!-- Transactions Content -->
             <ul class="nav nav-pills mb-4" id="transactionsTabs" role="tablist">
                 <li class="nav-item" role="presentation">
@@ -202,17 +214,17 @@
                                 <div class="col-md-3">
                                     <select class="form-select" id="walletFilter">
                                         <option value="">Todos los Monederos</option>
-                                        <option value="1">Monedero Principal</option>
-                                        <option value="2">Monedero Ahorros</option>
-                                        <option value="3">Monedero Gastos</option>
+                                        <option th:each="monedero : ${monederos}"
+                                                th:value="${monedero.id}"
+                                                th:text="${monedero.nombre}">Monedero Principal</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3">
                                     <select class="form-select" id="typeFilter">
                                         <option value="">Todos los Tipos</option>
-                                        <option value="deposit">Depósito</option>
-                                        <option value="withdraw">Retiro</option>
-                                        <option value="transfer">Transferencia</option>
+                                        <option value="DEPOSITO">Depósito</option>
+                                        <option value="RETIRO">Retiro</option>
+                                        <option value="TRANSFERENCIA">Transferencia</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3">
@@ -238,23 +250,35 @@
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    <tr>
-                                        <td>TRX-001</td>
-                                        <td>01/05/2023 10:30 AM</td>
-                                        <td>Principal</td>
-                                        <td><span class="badge bg-success">Depósito</span></td>
-                                        <td>Depósito en efectivo</td>
-                                        <td class="amount-positive">+$500.00</td>
-                                        <td><span class="badge bg-success">Completada</span></td>
+                                    <!-- Lista de transacciones desde el controlador -->
+                                    <tr th:each="transaction : ${transacciones}" th:if="${transaction != null}">
+                                        <td th:text="${transaction.id}">TRX-001</td>
+                                        <td th:text="${transaction.fechaFormateada}">01/05/2023 10:30 AM</td>
+                                        <td th:text="${transaction.origenNombre != null ? transaction.origenNombre : transaction.destinoNombre}">Principal</td>
                                         <td>
-                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#transactionDetailsModal">
+                                            <span th:class="'badge ' + ${transaction.tipo.name() == 'DEPOSITO' ? 'bg-success' : (transaction.tipo.name() == 'RETIRO' ? 'bg-danger' : 'bg-primary')}"
+                                                  th:text="${transaction.tipo}">Depósito</span>
+                                        </td>
+                                        <td th:text="${transaction.descripcion}">Depósito en efectivo</td>
+                                        <td th:class="${transaction.tipo.name() == 'DEPOSITO' ? 'amount-positive' : 'amount-negative'}"
+                                            th:text="${transaction.tipo.name() == 'DEPOSITO' ? '+$' : '-$'} + ${transaction.montoFormateado}">+$500.00</td>
+                                        <td>
+                                            <span th:class="'badge ' + ${transaction.activa ? 'bg-success' : 'bg-danger'}"
+                                                  th:text="${transaction.activa ? 'Completada' : 'Revertida'}">Completada</span>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary transaction-details-btn"
+                                                    th:attr="data-transaction-id=${transaction.id}"
+                                                    data-bs-toggle="modal" data-bs-target="#transactionDetailsModal">
                                                 <i class="bi bi-eye"></i>
                                             </button>
                                         </td>
                                     </tr>
-                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#transactionDetailsModal">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
+
+                                    <!-- Si no hay transacciones -->
+                                    <tr th:if="${transacciones == null || transacciones.isEmpty()}">
+                                        <td colspan="8" class="text-center py-4">
+                                            <p class="text-muted mb-0">No se encontraron transacciones</p>
                                         </td>
                                     </tr>
                                     </tbody>
@@ -310,24 +334,26 @@
                             <i class="bi bi-calendar-plus"></i> Programar Transacción Futura
                         </div>
                         <div class="card-body">
-                            <form>
+                            <form th:action="@{/transactions/schedule}" method="post">
                                 <div class="row mb-3">
                                     <div class="col-md-6">
                                         <label for="scheduledType" class="form-label">Tipo de Transacción</label>
-                                        <select class="form-select" id="scheduledType" required>
+                                        <select class="form-select" id="scheduledType" name="tipo" required>
                                             <option value="" selected disabled>Seleccionar tipo</option>
-                                            <option value="deposit">Depósito</option>
-                                            <option value="withdraw">Retiro</option>
-                                            <option value="transfer">Transferencia</option>
+                                            <option value="DEPOSITO">Depósito</option>
+                                            <option value="RETIRO">Retiro</option>
+                                            <option value="TRANSFERENCIA">Transferencia</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="scheduledWallet" class="form-label">Monedero</label>
-                                        <select class="form-select" id="scheduledWallet" required>
+                                        <select class="form-select" id="scheduledWallet" name="origenId" required>
                                             <option value="" selected disabled>Seleccionar monedero</option>
-                                            <option value="1">Monedero Principal</option>
-                                            <option value="2">Monedero Ahorros</option>
-                                            <option value="3">Monedero Gastos</option>
+                                            <option th:each="monedero : ${monederos}"
+                                                    th:value="${monedero.id}"
+                                                    th:text="${monedero.nombre} + ' - $' + ${#numbers.formatDecimal(monedero.saldo, 0, 'COMMA', 2, 'POINT')}">
+                                                Monedero Principal - $5,250.00
+                                            </option>
                                         </select>
                                     </div>
                                 </div>
@@ -336,26 +362,27 @@
                                         <label for="scheduledAmount" class="form-label">Monto</label>
                                         <div class="input-group">
                                             <span class="input-group-text">$</span>
-                                            <input type="number" class="form-control" id="scheduledAmount" min="0.01" step="0.01" placeholder="0.00" required>
+                                            <input type="number" class="form-control" id="scheduledAmount" name="monto" min="0.01" step="0.01" placeholder="0.00" required>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="scheduledDate" class="form-label">Fecha Programada</label>
-                                        <input type="datetime-local" class="form-control" id="scheduledDate" required>
+                                        <input type="datetime-local" class="form-control" id="scheduledDate" name="fechaProgramada" required>
                                     </div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="scheduledDescription" class="form-label">Descripción</label>
-                                    <textarea class="form-control" id="scheduledDescription" rows="2" placeholder="Descripción de la transacción programada"></textarea>
+                                    <textarea class="form-control" id="scheduledDescription" name="descripcion" rows="2" placeholder="Descripción de la transacción programada"></textarea>
                                 </div>
                                 <div class="mb-3">
                                     <label for="scheduledRecurrence" class="form-label">Recurrencia</label>
-                                    <select class="form-select" id="scheduledRecurrence">
-                                        <option value="once">Una vez</option>
-                                        <option value="daily">Diariamente</option>
-                                        <option value="weekly">Semanalmente</option>
-                                        <option value="monthly">Mensualmente</option>
+                                    <select class="form-select" id="scheduledRecurrence" name="periodoRecurrencia">
+                                        <option value="NONE">Una vez</option>
+                                        <option value="DIARIO">Diariamente</option>
+                                        <option value="SEMANAL">Semanalmente</option>
+                                        <option value="MENSUAL">Mensualmente</option>
                                     </select>
+                                    <input type="hidden" id="recurrenteInput" name="recurrente" value="false">
                                 </div>
                                 <div class="d-grid gap-2">
                                     <button type="submit" class="btn btn-primary">Programar Transacción</button>
@@ -383,14 +410,17 @@
                         <label for="depositWallet" class="form-label">Monedero Destino</label>
                         <select class="form-select" id="depositWallet" name="idMonedero" required>
                             <option value="" selected disabled>Seleccionar monedero</option>
-                            <option value="1">Monedero Principal</option>
-                            <option value="2">Monedero Ahorros</option>
-                            <option value="3">Monedero Gastos</option>
+
                             <!-- Iterar sobre los monederos del cliente -->
-                            <option th:each="monedero : ${cliente.monederos.firstNode}"
-                                    th:if="${monedero != null}"
-                                    th:value="${monedero.value.id}"
-                                    th:text="${monedero.value.nombre}">Monedero Principal</option>
+                            <option th:each="monedero : ${monederos}"
+                                    th:value="${monedero.id}"
+                                    th:text="${monedero.nombre} + ' - $' + ${#numbers.formatDecimal(monedero.saldo, 0, 'COMMA', 2, 'POINT')}">
+                                Monedero
+                            </option>
+
+                            <!-- Si no hay monederos, mostrar opción por defecto -->
+                            <option th:if="${monederos == null || monederos.isEmpty()}"
+                                    value="" disabled>No hay monederos disponibles</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -402,7 +432,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="depositMethod" class="form-label">Método de Depósito</label>
-                        <select class="form-select" id="depositMethod" name= "metodo" required>
+                        <select class="form-select" id="depositMethod" name="metodo" required>
                             <option value="" selected disabled>Seleccionar método</option>
                             <option value="cash">Efectivo</option>
                             <option value="bank">Transferencia Bancaria</option>
@@ -411,7 +441,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="depositDescription" class="form-label">Descripción (Opcional)</label>
-                        <textarea class="form-control" id="depositDescription" rows="2" placeholder="Descripción del depósito"></textarea>
+                        <textarea class="form-control" id="depositDescription" name="descripcion" rows="2" placeholder="Descripción del depósito"></textarea>
                     </div>
                 </form>
             </div>
@@ -420,18 +450,6 @@
                 <button type="submit" form="depositForm" class="btn btn-success">Depositar</button>
             </div>
         </div>
-    </div>
-</div>
-
-<!-- Alertas para mensajes de éxito o error -->
-<div class="container mt-3">
-    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
-        <span th:text="${successMessage}"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
-        <span th:text="${errorMessage}"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 </div>
 
@@ -444,26 +462,34 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="withdrawForm">
+                <form id="withdrawForm" th:action="@{/transactions/process-withdraw}" method="post">
                     <div class="mb-3">
                         <label for="withdrawWallet" class="form-label">Monedero Origen</label>
-                        <select class="form-select" id="withdrawWallet" required>
+                        <select class="form-select" id="withdrawWallet" name="idMonedero" required>
                             <option value="" selected disabled>Seleccionar monedero</option>
-                            <option value="1">Monedero Principal - $5,250.00</option>
-                            <option value="2">Monedero Ahorros - $2,800.00</option>
-                            <option value="3">Monedero Gastos - $700.00</option>
+
+                            <!-- Iterar sobre los monederos del cliente -->
+                            <option th:each="monedero : ${monederos}"
+                                    th:value="${monedero.id}"
+                                    th:text="${monedero.nombre} + ' - $' + ${#numbers.formatDecimal(monedero.saldo, 0, 'COMMA', 2, 'POINT')}">
+                                Monedero
+                            </option>
+
+                            <!-- Si no hay monederos, mostrar opción por defecto -->
+                            <option th:if="${monederos == null || monederos.isEmpty()}"
+                                    value="" disabled>No hay monederos disponibles</option>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label for="withdrawAmount" class="form-label">Monto a Retirar</label>
                         <div class="input-group">
                             <span class="input-group-text">$</span>
-                            <input type="number" class="form-control" id="withdrawAmount" min="0.01" step="0.01" placeholder="0.00" required>
+                            <input type="number" class="form-control" id="withdrawAmount" name="monto" min="0.01" step="0.01" placeholder="0.00" required>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label for="withdrawMethod" class="form-label">Método de Retiro</label>
-                        <select class="form-select" id="withdrawMethod" required>
+                        <select class="form-select" id="withdrawMethod" name="metodo" required>
                             <option value="" selected disabled>Seleccionar método</option>
                             <option value="cash">Efectivo</option>
                             <option value="bank">Transferencia Bancaria</option>
@@ -472,7 +498,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="withdrawDescription" class="form-label">Descripción (Opcional)</label>
-                        <textarea class="form-control" id="withdrawDescription" rows="2" placeholder="Descripción del retiro"></textarea>
+                        <textarea class="form-control" id="withdrawDescription" name="descripcion" rows="2" placeholder="Descripción del retiro"></textarea>
                     </div>
                 </form>
             </div>
@@ -493,14 +519,22 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="transferForm">
+                <form id="transferForm" th:action="@{/transactions/process-transfer}" method="post">
                     <div class="mb-3">
                         <label for="transferFromWallet" class="form-label">Monedero Origen</label>
-                        <select class="form-select" id="transferFromWallet" required>
-                            <option value="" selected disabled>Seleccionar monedero origen</option>
-                            <option value="1">Monedero Principal - $5,250.00</option>
-                            <option value="2">Monedero Ahorros - $2,800.00</option>
-                            <option value="3">Monedero Gastos - $700.00</option>
+                        <select class="form-select" id="transferFromWallet" name="idMonederoOrigen" required>
+                            <option value="" selected disabled>Seleccionar monedero</option>
+
+                            <!-- Iterar sobre los monederos del cliente -->
+                            <option th:each="monedero : ${monederos}"
+                                    th:value="${monedero.id}"
+                                    th:text="${monedero.nombre} + ' - $' + ${#numbers.formatDecimal(monedero.saldo, 0, 'COMMA', 2, 'POINT')}">
+                                Monedero
+                            </option>
+
+                            <!-- Si no hay monederos, mostrar opción por defecto -->
+                            <option th:if="${monederos == null || monederos.isEmpty()}"
+                                    value="" disabled>No hay monederos disponibles</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -510,20 +544,33 @@
                             <option value="external">A otro usuario</option>
                         </select>
                     </div>
+                    <!-- Monedero destino (propio) -->
+                    <div class="mb-3" id="internalRecipientDiv">
+                        <label for="internalRecipient" class="form-label">Monedero Destino</label>
+                        <select class="form-select" id="internalRecipient" name="idMonederoDestino">
+                            <option value="" selected disabled>Seleccionar monedero destino</option>
+                            <option th:each="monedero : ${monederos}"
+                                    th:value="${monedero.id}"
+                                    th:text="${monedero.nombre} + ' - $' + ${#numbers.formatDecimal(monedero.saldo, 0, 'COMMA', 2, 'POINT')}">
+                                Monedero Principal - $5,250.00
+                            </option>
+                        </select>
+                    </div>
+                    <!-- Número de cuenta de otro usuario -->
                     <div class="mb-3 d-none" id="externalRecipientDiv">
-                        <label for="externalRecipient" class="form-label">Numero de cuenta del destinatario</label>
-                        <input type="text" class="form-control" id="externalRecipient" placeholder="Ingrese el numero de cuenta">
+                        <label for="externalRecipient" class="form-label">Número de cuenta del destinatario</label>
+                        <input type="text" class="form-control" id="externalRecipient" name="numeroCuentaDestino" placeholder="Ingrese el número de cuenta">
                     </div>
                     <div class="mb-3">
                         <label for="transferAmount" class="form-label">Monto a Transferir</label>
                         <div class="input-group">
                             <span class="input-group-text">$</span>
-                            <input type="number" class="form-control" id="transferAmount" min="0.01" step="0.01" placeholder="0.00" required>
+                            <input type="number" class="form-control" id="transferAmount" name="monto" min="0.01" step="0.01" placeholder="0.00" required>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label for="transferDescription" class="form-label">Descripción (Opcional)</label>
-                        <textarea class="form-control" id="transferDescription" rows="2" placeholder="Descripción de la transferencia"></textarea>
+                        <textarea class="form-control" id="transferDescription" name="descripcion" rows="2" placeholder="Descripción de la transferencia"></textarea>
                     </div>
                 </form>
             </div>
@@ -543,58 +590,19 @@
                 <h5 class="modal-title" id="transactionDetailsModalLabel">Detalles de la Transacción</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <div class="d-flex align-items-center mb-4">
-                    <div class="transaction-icon transaction-deposit me-3">
-                        <i class="bi bi-arrow-down"></i>
+            <div class="modal-body" id="transactionDetailsContent">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
                     </div>
-                    <div>
-                        <h5 class="mb-0">Depósito en efectivo</h5>
-                        <span class="text-muted">01/05/2023 10:30 AM</span>
-                    </div>
-                    <div class="ms-auto">
-                        <span class="amount-positive fs-4">+$500.00</span>
-                    </div>
-                </div>
-
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h6 class="card-subtitle mb-2 text-muted">Información de la Transacción</h6>
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>ID de Transacción:</span>
-                                <span class="fw-bold">TRX-001</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>Estado:</span>
-                                <span class="badge bg-success">Completada</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>Monedero:</span>
-                                <span>Monedero Principal</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>Método:</span>
-                                <span>Efectivo</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>Puntos Ganados:</span>
-                                <span class="text-success">+5 pts</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-subtitle mb-2 text-muted">Notas</h6>
-                        <p>Depósito realizado en la sucursal central. Fondos disponibles inmediatamente.</p>
-                    </div>
+                    <p class="mt-3">Cargando detalles de la transacción...</p>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" onclick="window.print()">Imprimir Comprobante</button>
+                <button type="button" class="btn btn-primary d-none" id="printReceiptBtn" onclick="window.print()">
+                    <i class="bi bi-printer"></i> Imprimir Comprobante
+                </button>
             </div>
         </div>
     </div>
@@ -608,25 +616,211 @@
 <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
 
-<script>
+<script th:inline="javascript">
     $(document).ready(function() {
-        // Initialize DataTable
-        $('#transactionsTable').DataTable({
-            responsive: true,
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json'
+
+        // Vinculamos el campo de búsqueda para que funcione con DataTables
+        $('#transactionSearch').on('keyup', function() {
+            transactionsTable.search(this.value).draw();
+        });
+
+        // Filtros personalizados
+        $('#walletFilter, #typeFilter, #dateFromFilter, #dateToFilter').on('change', function() {
+            applyFilters();
+        });
+
+        // Función para aplicar todos los filtros
+        function applyFilters() {
+            const walletFilter = $('#walletFilter').val();
+            const typeFilter = $('#typeFilter').val();
+            const dateFromFilter = $('#dateFromFilter').val() ? new Date($('#dateFromFilter').val()) : null;
+            const dateToFilter = $('#dateToFilter').val() ? new Date($('#dateToFilter').val()) : null;
+
+            // Reiniciar búsqueda
+            transactionsTable.search('').columns().search('').draw();
+
+            // Aplicar filtros personalizados usando DataTables API
+            transactionsTable.columns(2).search(walletFilter || ''); // Monedero (columna 2)
+            transactionsTable.columns(3).search(typeFilter || ''); // Tipo (columna 3)
+
+            // Filtro por fecha requiere lógica personalizada (filtro por fecha formateada)
+            if (dateFromFilter || dateToFilter) {
+                $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                    const transactionDate = new Date(data[1]); // La fecha está en la columna 1
+
+                    // Si hay fecha desde y la transacción es anterior, no mostrar
+                    if (dateFromFilter && transactionDate < dateFromFilter) {
+                        return false;
+                    }
+
+                    // Si hay fecha hasta y la transacción es posterior, no mostrar
+                    if (dateToFilter) {
+                        // Ajustar la fecha hasta al final del día
+                        const adjustedDateTo = new Date(dateToFilter);
+                        adjustedDateTo.setHours(23, 59, 59, 999);
+
+                        if (transactionDate > adjustedDateTo) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                });
+            } else {
+                // Limpiar filtros personalizados si no hay fechas
+                $.fn.dataTable.ext.search.pop();
+            }
+
+            // Aplicar todos los filtros
+            transactionsTable.draw();
+        }
+
+        // Manejar tipo de transferencia
+        $('#transferType').on('change', function() {
+            if ($(this).val() === 'external') {
+                $('#internalRecipientDiv').addClass('d-none');
+                $('#externalRecipientDiv').removeClass('d-none');
+                $('#internalRecipient').prop('required', false);
+                $('#externalRecipient').prop('required', true);
+            } else {
+                $('#internalRecipientDiv').removeClass('d-none');
+                $('#externalRecipientDiv').addClass('d-none');
+                $('#internalRecipient').prop('required', true);
+                $('#externalRecipient').prop('required', false);
             }
         });
 
-        // Toggle external recipient field based on transfer type
-        $('#transferType').change(function() {
-            if ($(this).val() === 'external') {
-                $('#externalRecipientDiv').removeClass('d-none');
-            } else {
-                $('#externalRecipientDiv').addClass('d-none');
-            }
+        // Manejar recurrencia de transacción programada
+        $('#scheduledRecurrence').on('change', function() {
+            const isRecurrent = $(this).val() !== 'NONE';
+            $('#recurrenteInput').val(isRecurrent);
         });
+
+        // Evento para botones de detalles de transacción
+        $('.transaction-details-btn').on('click', function() {
+            const transactionId = $(this).data('transaction-id');
+            loadTransactionDetails(transactionId);
+        });
+
+        // Función para cargar detalles de transacción
+        function loadTransactionDetails(transactionId) {
+            // Mostrar spinner de carga
+            $('#transactionDetailsContent').html(
+                `<div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-3">Cargando detalles de la transacción...</p>
+                </div>`
+            );
+
+            // Ocultar botón de impresión inicialmente
+            $('#printReceiptBtn').addClass('d-none');
+
+            // En una implementación real, hacer una petición AJAX para obtener los detalles
+            // Por ahora, simulamos una petición con setTimeout
+            setTimeout(function() {
+                // Buscar la transacción en la tabla por su ID
+                let transactionData = null;
+                $('#transactionsTable tbody tr').each(function() {
+                    const rowId = $(this).find('td:first').text();
+                    if (rowId === transactionId) {
+                        transactionData = {
+                            id: rowId,
+                            fecha: $(this).find('td:eq(1)').text(),
+                            monedero: $(this).find('td:eq(2)').text(),
+                            tipo: $(this).find('td:eq(3)').text().trim(),
+                            descripcion: $(this).find('td:eq(4)').text(),
+                            monto: $(this).find('td:eq(5)').text(),
+                            estado: $(this).find('td:eq(6)').text()
+                        };
+                        return false; // Salir del bucle
+                    }
+                });
+
+                if (transactionData) {
+                    // Determinar clases para iconos según el tipo
+                    let iconClass = 'transaction-deposit';
+                    let iconType = 'bi-arrow-down';
+                    let amountClass = 'amount-positive';
+
+                    if (transactionData.tipo.includes('RETIRO')) {
+                        iconClass = 'transaction-withdraw';
+                        iconType = 'bi-arrow-up';
+                        amountClass = 'amount-negative';
+                    } else if (transactionData.tipo.includes('TRANSFERENCIA')) {
+                        iconClass = 'transaction-transfer';
+                        iconType = 'bi-arrow-right';
+                        amountClass = 'amount-negative';
+                    }
+
+                    // Construir HTML de detalles
+                    const detailsHTML = `
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="transaction-icon ${iconClass} me-3">
+                                <i class="bi ${iconType}"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0">${transactionData.tipo}</h5>
+                                <span class="text-muted">${transactionData.fecha}</span>
+                            </div>
+                            <div class="ms-auto">
+                                <span class="${amountClass} fs-4">${transactionData.monto}</span>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Información de la Transacción</h6>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>ID de Transacción:</span>
+                                        <span class="fw-bold">${transactionData.id}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Estado:</span>
+                                        <span class="badge ${transactionData.estado.includes('Completada') ? 'bg-success' : 'bg-danger'}">${transactionData.estado}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Monedero:</span>
+                                        <span>${transactionData.monedero}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Puntos Ganados:</span>
+                                        <span class="text-success">+5 pts</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>`;
+
+                    // Añadir sección de descripción si hay
+                    let detailsWithDescription = detailsHTML;
+                    if (transactionData.descripcion) {
+                        detailsWithDescription += `
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">Descripción</h6>
+                                    <p>${transactionData.descripcion}</p>
+                                </div>
+                            </div>`;
+                    }
+
+                    // Actualizar contenido y mostrar botón de impresión
+                    $('#transactionDetailsContent').html(detailsWithDescription);
+                    $('#printReceiptBtn').removeClass('d-none');
+                } else {
+                    // Mostrar mensaje de error si no se encontró la transacción
+                    $('#transactionDetailsContent').html(
+                        `<div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            No se encontraron detalles para esta transacción.
+                        </div>`
+                    );
+                }
+            }, 800); // Simular tiempo de carga
+        }
     });
 </script>
 </body>
 </html>
+```

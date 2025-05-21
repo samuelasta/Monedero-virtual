@@ -1,5 +1,6 @@
 package co.uniquindio.edu.mi_moneda.services.implementation;
 
+import co.uniquindio.edu.mi_moneda.listasPropias.SimpleList;
 import co.uniquindio.edu.mi_moneda.model.*;
 import co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion;
 import co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccionPuntos;
@@ -9,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -46,23 +48,49 @@ public class PuntosServiceImpl implements PuntosService {
             return false;
         }
 
-        // Obtener objeto de puntos del cliente
-        Puntos puntosCliente = cliente.getPuntos();
+        // 1. Buscar el objeto Puntos existente del cliente por ID de cliente
+        Puntos puntosCliente = null;
 
+        // Primero, verificar si el cliente ya tiene una referencia a puntos
+        if (cliente.getPuntos() != null && cliente.getPuntos().getId() != null) {
+            // Buscar por ID para asegurarnos de obtener el documento más reciente
+            Optional<Puntos> puntosExistentes = puntosRepository.findById(cliente.getPuntos().getId());
+            if (puntosExistentes.isPresent()) {
+                puntosCliente = puntosExistentes.get();
+            }
+        }
+
+        // Si no se encontró por ID, buscar por cliente
         if (puntosCliente == null) {
-            // Si el cliente no tiene puntos, crear nuevo objeto
+            puntosCliente = puntosRepository.findByCliente(cliente);
+        }
+
+        // 2. Si no existe, crear un nuevo objeto Puntos
+        if (puntosCliente == null) {
             puntosCliente = Puntos.builder()
                     .id(UUID.randomUUID().toString())
                     .cliente(cliente)
                     .puntosAcumulados(0)
+                    .historialPuntos(new SimpleList<>())
                     .build();
+
+            // Asociar los nuevos puntos al cliente
             cliente.setPuntos(puntosCliente);
+
+            // Guardar el cliente primero para establecer la relación
+            clienteRepository.save(cliente);
         }
 
-        // Incrementar puntos
-        puntosCliente.setPuntosAcumulados(puntosCliente.getPuntosAcumulados() + puntos);
+        // 3. Incrementar puntos
+        double puntosActualizados = puntosCliente.getPuntosAcumulados() + puntos;
+        puntosCliente.setPuntosAcumulados(puntosActualizados);
 
-        // Registrar transacción de puntos
+        // 4. Verificar el historial de puntos
+        if (puntosCliente.getHistorialPuntos() == null) {
+            puntosCliente.setHistorialPuntos(new SimpleList<>());
+        }
+
+        // 5. Crear y guardar la transacción de puntos
         TransaccionPuntos transaccionPuntos = TransaccionPuntos.builder()
                 .id(UUID.randomUUID().toString())
                 .tipo(TipoTransaccionPuntos.ACUMULACION)
@@ -71,17 +99,16 @@ public class PuntosServiceImpl implements PuntosService {
                 .motivo(motivo)
                 .build();
 
-        // Guardar la transacción en el repositorio
+        // Guardar la transacción
         transaccionPuntos = transaccionPuntosRepository.save(transaccionPuntos);
 
-        //añadimos la transaccion a la lista simple de historial de transaccion de puntos
+        // 6. Añadir la transacción al historial
         puntosCliente.getHistorialPuntos().add(transaccionPuntos);
 
-        // Guardar en repositorios
+        // 7. Guardar solo el objeto de puntos actualizado
         puntosRepository.save(puntosCliente);
-        clienteRepository.save(cliente);
 
-        // Actualizar rango del cliente después de acumular puntos
+        // 8. Actualizar el rango del cliente
         actualizarRangoCliente(cliente);
 
         return true;

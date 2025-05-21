@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ public class Cliente implements identificable {
     @JsonManagedReference
     @Transient
     private SimpleList<Monedero> monederos = new SimpleList<>();
+    @Transient
     private DoubleList<Transaccion> historialTransacciones = new DoubleList<>();
     private QueueTransactionProgramed transaccionesProgramadas = new QueueTransactionProgramed();
     private SimpleList<Notificacion> notificaciones = new SimpleList<>();

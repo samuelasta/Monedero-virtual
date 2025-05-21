@@ -9,6 +9,7 @@ import co.uniquindio.edu.mi_moneda.repository.ClienteRepository;
 import co.uniquindio.edu.mi_moneda.repository.MonederoRepository;
 import co.uniquindio.edu.mi_moneda.repository.TransaccionRepository;
 import co.uniquindio.edu.mi_moneda.services.interfaces.ClienteService;
+import co.uniquindio.edu.mi_moneda.services.interfaces.EmailService;
 import co.uniquindio.edu.mi_moneda.services.interfaces.MonederoService;
 import co.uniquindio.edu.mi_moneda.services.interfaces.PuntosService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +36,9 @@ public class MonederoServiceImpl implements MonederoService {
 
     @Autowired
     private PuntosService puntosService;
+
+    @Autowired
+    private EmailService emailService;
 
     /**
      * Realizamos un deposito a un monedero, creamos el registro de la transacción
@@ -93,6 +97,9 @@ public class MonederoServiceImpl implements MonederoService {
                 // Actualizamos el cliente
                 clienteRepository.save(cliente);
 
+                LocalDateTime fechaTransferencia = LocalDateTime.now();
+                emailService.sendMovementEmail(cliente.getEmail(), monedero, monto, cliente, fechaTransferencia, motivo);
+
             } else {
                 throw new RuntimeException("El monedero no pertenece al cliente");
             }
@@ -100,6 +107,7 @@ public class MonederoServiceImpl implements MonederoService {
             throw new RuntimeException("Monedero no encontrado con ID: " + idMonedero);
         }
     }
+
 
     /**
      * Realizamos un retiro, creamos el registro de la transacción, loa gregamos
@@ -158,6 +166,9 @@ public class MonederoServiceImpl implements MonederoService {
                 // Actualizamos el cliente
                 clienteRepository.save(cliente);
 
+                LocalDateTime fechaTransferencia = LocalDateTime.now();
+                emailService.sendMovementEmail(cliente.getEmail(), monedero, monto, cliente, fechaTransferencia, motivo);
+
             } else {
                 throw new RuntimeException("El monedero no pertenece al cliente");
             }
@@ -171,7 +182,7 @@ public class MonederoServiceImpl implements MonederoService {
         // Primero buscamos el monedero específico por su ID
         Optional<Monedero> monederoOptional = monederoRepository.findById(idMonedero);
         // Buscamos el monedero destino por numero de cuenta
-        Optional<Monedero> monederoDestinoOptional = monederoRepository.findById(numeroCuenta);
+        Optional<Monedero> monederoDestinoOptional = monederoRepository.findByNumeroCuenta(numeroCuenta);
 
         if (monederoOptional.isPresent() && monederoDestinoOptional.isPresent()) {
             Monedero monedero = monederoOptional.get();
@@ -241,6 +252,17 @@ public class MonederoServiceImpl implements MonederoService {
                 // Actualizamos el cliente
                 clienteRepository.save(cliente);
                 clienteRepository.save(monederoDestino.getPropietario());
+
+                //el mensaje para el que salió el dinero
+                LocalDateTime fechaTransferencia = LocalDateTime.now();
+                emailService.sendMovementEmail(cliente.getEmail(), monedero, monto, cliente, fechaTransferencia, motivo);
+
+                String emailDestinatario = monederoDestino.getPropietario().getEmail();
+                Cliente clienteDestino = monederoDestino.getPropietario();
+                emailService.sendMovementEmailTransfer(emailDestinatario, monederoDestino, monto, cliente, clienteDestino, fechaTransferencia, motivo);
+
+
+
 
             } else {
                 throw new RuntimeException("El monedero no pertenece al cliente");

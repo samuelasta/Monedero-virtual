@@ -194,7 +194,7 @@
           </button>
           <div class="d-flex align-items-center">
             <h5 class="mb-0">Mis Monederos</h5>
-            <span class="ms-3 text-muted">Bienvenido, <span th:text="${cliente.nombre}">Usuario</span></span>
+            <span class="ms-3 text-muted" th:if="${cliente != null}">Bienvenido, <span th:text="${cliente.nombre}">Usuario</span></span>
           </div>
           <ul class="navbar-nav ms-auto">
             <li class="nav-item">
@@ -207,15 +207,15 @@
       </nav>
 
       <!-- Mensaje de éxito o error -->
-      <div class="alert alert-success alert-dismissible fade show" role="alert" th:if="${mostrarMensaje}">
+      <div class="alert alert-success alert-dismissible fade show" role="alert" th:if="${successMessage != null}">
         <i class="bi bi-check-circle-fill me-2"></i>
-        <span th:text="${mensaje}">Operación exitosa</span>
+        <span th:text="${successMessage}">Operación exitosa</span>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
 
-      <div class="alert alert-danger alert-dismissible fade show" role="alert" th:if="${mostrarError}">
+      <div class="alert alert-danger alert-dismissible fade show" role="alert" th:if="${errorMessage != null}">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
-        <span th:text="${error}">Ha ocurrido un error</span>
+        <span th:text="${errorMessage}">Ha ocurrido un error</span>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
 
@@ -223,7 +223,9 @@
       <div class="row">
         <!-- Monederos dinámicos desde la base de datos -->
         <div class="col-md-6 col-lg-4 mb-4" th:each="monedero, iterStat : ${clienteMonederos}" th:if="${monedero != null}">
-          <div class="card wallet-card h-100" th:classappend="${iterStat.index % 3 == 0 ? 'wallet-primary' : (iterStat.index % 3 == 1 ? 'wallet-secondary' : 'wallet-tertiary')}" data-bs-toggle="modal" data-bs-target="#walletDetailsModal">
+          <div class="card wallet-card h-100" th:classappend="${iterStat.index % 3 == 0 ? 'wallet-primary' : (iterStat.index % 3 == 1 ? 'wallet-secondary' : 'wallet-tertiary')}"
+               th:data-id="${monedero.id}"
+               data-bs-toggle="modal" data-bs-target="#walletDetailsModal">
             <div class="card-body position-relative">
               <div class="wallet-actions">
                 <div class="d-flex">
@@ -235,11 +237,11 @@
                       <i class="bi bi-three-dots-vertical"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-                      <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-down me-2"></i>Depositar</a></li>
-                      <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-up me-2"></i>Retirar</a></li>
-                      <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-left-right me-2"></i>Transferir</a></li>
+                      <li><a class="dropdown-item" th:href="@{/transactions/deposit(walletId=${monedero.id})}"><i class="bi bi-arrow-down me-2"></i>Depositar</a></li>
+                      <li><a class="dropdown-item" th:href="@{/transactions/withdraw(walletId=${monedero.id})}"><i class="bi bi-arrow-up me-2"></i>Retirar</a></li>
+                      <li><a class="dropdown-item" th:href="@{/transactions/transfer(walletId=${monedero.id})}"><i class="bi bi-arrow-left-right me-2"></i>Transferir</a></li>
                       <li><hr class="dropdown-divider"></li>
-                      <li><a class="dropdown-item" href="#"><i class="bi bi-trash me-2"></i>Eliminar</a></li>
+                      <li><a class="dropdown-item" href="#" th:attr="data-wallet-id=${monedero.id}" data-bs-toggle="modal" data-bs-target="#deleteWalletModal"><i class="bi bi-trash me-2"></i>Eliminar</a></li>
                     </ul>
                   </div>
                 </div>
@@ -295,17 +297,17 @@
               <tbody>
               <!-- Transacciones dinámicas -->
               <tr th:each="transaccion, iterStat : ${transaccionesRecientes}" th:if="${iterStat.index < 5}">
-                <td th:text="${#temporals.format(transaccion.fecha, 'dd/MM/yyyy, HH:mm')}">Fecha</td>
-                <td th:text="${transaccion.origen != null ? transaccion.origen.nombre : (transaccion.destino != null ? transaccion.destino.nombre : 'N/A')}">Monedero</td>
+                <td th:text="${transaccion.fechaFormateada}">Fecha</td>
+                <td th:text="${transaccion.origenNombre != null ? transaccion.origenNombre : (transaccion.destinoNombre != null ? transaccion.destinoNombre : 'N/A')}">Monedero</td>
                 <td>
                     <span th:class="'badge ' +
-                          (${transaccion.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).DEPOSITO} ? 'bg-success' :
-                          (${transaccion.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).RETIRO} ? 'bg-danger' : 'bg-primary'))"
+                          (${transaccion.tipo.name() == 'DEPOSITO'} ? 'bg-success' :
+                          (${transaccion.tipo.name() == 'RETIRO'} ? 'bg-danger' : 'bg-primary'))"
                           th:text="${transaccion.tipo}">Tipo</span>
                 </td>
                 <td th:text="${transaccion.descripcion}">Descripción</td>
-                <td th:class="${transaccion.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).DEPOSITO} ? 'text-success' : 'text-danger'"
-                    th:text="${transaccion.tipo == T(co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion).DEPOSITO} ? '+$' + ${#numbers.formatDecimal(transaccion.monto, 0, 'COMMA', 2, 'POINT')} : '-$' + ${#numbers.formatDecimal(transaccion.monto, 0, 'COMMA', 2, 'POINT')}">Monto</td>
+                <td th:class="${transaccion.tipo.name() == 'DEPOSITO'} ? 'text-success' : 'text-danger'"
+                    th:text="${transaccion.tipo.name() == 'DEPOSITO'} ? '+$' + ${transaccion.montoFormateado} : '-$' + ${transaccion.montoFormateado}">Monto</td>
                 <td><span class="badge bg-success" th:text="${transaccion.activa ? 'Completada' : 'Revertida'}">Estado</span></td>
               </tr>
 
@@ -380,6 +382,32 @@
   </div>
 </div>
 
+<!-- Delete Wallet Modal -->
+<div class="modal fade" id="deleteWalletModal" tabindex="-1" aria-labelledby="deleteWalletModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteWalletModalLabel">Confirmar Eliminación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>¿Estás seguro de que deseas eliminar este monedero? Esta acción no se puede deshacer.</p>
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          Si el monedero tiene saldo, deberás transferirlo antes de eliminarlo.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <form th:action="@{/wallets/delete}" method="post">
+          <input type="hidden" id="deleteWalletId" name="id">
+          <button type="submit" class="btn btn-danger">Eliminar Monedero</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Wallet Details Modal -->
 <div class="modal fade" id="walletDetailsModal" tabindex="-1" aria-labelledby="walletDetailsModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -391,7 +419,7 @@
       <div class="modal-body">
         <div class="row">
           <div class="col-md-6">
-            <!-- Esta parte se debería actualizar dinámicamente usando JavaScript cuando se abre el modal -->
+            <!-- Esta parte se actualizará dinámicamente usando JavaScript cuando se abre el modal -->
             <div class="card wallet-primary mb-4">
               <div class="card-body">
                 <h6 class="card-subtitle mb-1" id="modalWalletName">Monedero Principal</h6>
@@ -404,15 +432,15 @@
               </div>
             </div>
             <div class="d-grid gap-2">
-              <button class="btn btn-outline-primary">
+              <a href="#" id="depositWalletBtn" class="btn btn-outline-primary">
                 <i class="bi bi-arrow-down"></i> Depositar
-              </button>
-              <button class="btn btn-outline-primary">
+              </a>
+              <a href="#" id="withdrawWalletBtn" class="btn btn-outline-primary">
                 <i class="bi bi-arrow-up"></i> Retirar
-              </button>
-              <button class="btn btn-outline-primary">
+              </a>
+              <a href="#" id="transferWalletBtn" class="btn btn-outline-primary">
                 <i class="bi bi-arrow-left-right"></i> Transferir
-              </button>
+              </a>
             </div>
           </div>
           <div class="col-md-6">
@@ -433,7 +461,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-        <button type="button" class="btn btn-primary">Editar Monedero</button>
+        <a href="#" id="editWalletBtn" class="btn btn-primary">Editar Monedero</a>
       </div>
     </div>
   </div>
@@ -446,7 +474,6 @@
 <script th:inline="javascript">
   document.addEventListener('DOMContentLoaded', function() {
     // Datos de monederos desde Thymeleaf
-    const cliente = /*[[${cliente}]]*/ {};
     const monederos = /*[[${clienteMonederos}]]*/ [];
     const transaccionesRecientes = /*[[${transaccionesRecientes}]]*/ [];
 
@@ -455,41 +482,73 @@
     const walletDetailsModal = document.getElementById('walletDetailsModal');
 
     if (walletCards.length > 0 && walletDetailsModal) {
-      walletCards.forEach((card, index) => {
+      walletCards.forEach((card) => {
         card.addEventListener('click', function() {
-          // Aquí obtendrías los datos del monedero que se hizo clic
-          // En un caso real, podrías usar atributos data-* para identificar el monedero
-          // Por ahora, solo actualizamos la interfaz con datos simulados
+          const walletId = this.getAttribute('data-id');
+
+          // Actualizar los enlaces de acción con el ID del monedero
+          document.getElementById('depositWalletBtn').href = `/transactions/deposit?walletId=${walletId}`;
+          document.getElementById('withdrawWalletBtn').href = `/transactions/withdraw?walletId=${walletId}`;
+          document.getElementById('transferWalletBtn').href = `/transactions/transfer?walletId=${walletId}`;
+          document.getElementById('editWalletBtn').href = `/wallets/edit/${walletId}`;
+
+          // Actualizar los datos del monedero en el modal
           document.getElementById('modalWalletName').textContent = card.querySelector('.card-subtitle').textContent;
           document.getElementById('modalWalletNumber').textContent = card.querySelector('.wallet-number').textContent;
           document.getElementById('modalWalletBalance').textContent = card.querySelector('.wallet-balance').textContent;
 
-          // Actualizar la lista de transacciones (simulado)
-          // En un caso real, harías una solicitud AJAX para obtener las transacciones de este monedero
+          // Aquí cargaríamos las transacciones del monedero específico
+          // idealmente con una llamada AJAX para no recargar la página
+          // Por ahora, solo mostraremos un mensaje
           const transactionsList = document.getElementById('modalTransactionsList');
           transactionsList.innerHTML = '<div class="text-center p-3"><p>Cargando transacciones...</p></div>';
 
           // Simulamos una carga asíncrona
           setTimeout(() => {
-            transactionsList.innerHTML = `
-              <a href="#" class="list-group-item list-group-item-action">
-                <div class="d-flex w-100 justify-content-between">
-                  <h6 class="mb-1">Depósito</h6>
-                  <small class="text-success">+$500.00</small>
-                </div>
-                <p class="mb-1">Depósito en efectivo</p>
-                <small class="text-muted">Hoy, 10:30 AM</small>
-              </a>
-              <a href="#" class="list-group-item list-group-item-action">
-                <div class="d-flex w-100 justify-content-between">
-                  <h6 class="mb-1">Transferencia saliente</h6>
-                  <small class="text-danger">-$150.00</small>
-                </div>
-                <p class="mb-1">Pago de servicio</p>
-                <small class="text-muted">Ayer, 3:45 PM</small>
-              </a>
-            `;
+            // Buscar transacciones para este monedero específico
+            // En un entorno real, esto sería una llamada a la API
+
+            let transactionsHtml = '';
+
+            // Si no hay transacciones, mostrar mensaje
+            if (transaccionesRecientes.length === 0) {
+              transactionsHtml = '<div class="text-center p-3"><p>No hay transacciones recientes.</p></div>';
+            } else {
+              // Mostrar algunas transacciones (limitadas a 2 para el modal)
+              transactionsHtml = `
+                <a href="#" class="list-group-item list-group-item-action">
+                  <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">Depósito</h6>
+                    <small class="text-success">+$500.00</small>
+                  </div>
+                  <p class="mb-1">Depósito en efectivo</p>
+                  <small class="text-muted">Hoy, 10:30 AM</small>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                  <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">Transferencia saliente</h6>
+                    <small class="text-danger">-$150.00</small>
+                  </div>
+                  <p class="mb-1">Pago de servicio</p>
+                  <small class="text-muted">Ayer, 3:45 PM</small>
+                </a>
+              `;
+            }
+
+            transactionsList.innerHTML = transactionsHtml;
           }, 500);
+        });
+      });
+    }
+
+    // Manejador para el botón de eliminar monedero
+    const deleteButtons = document.querySelectorAll('[data-bs-target="#deleteWalletModal"]');
+    if (deleteButtons.length > 0) {
+      deleteButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+          e.stopPropagation(); // Evitar que se active el modal de detalles del monedero
+          const walletId = this.getAttribute('data-wallet-id');
+          document.getElementById('deleteWalletId').value = walletId;
         });
       });
     }

@@ -75,7 +75,7 @@ public class ClienteServiceImpl implements ClienteService {
 
             // Creamos y asociamos los puntos
             Puntos puntos = new Puntos();
-            puntos.setId(UUID.randomUUID().toString());
+            puntos.setId(clienteGuardado.getId());
             puntos.setCliente(clienteGuardado);
             puntos.setPuntosAcumulados(0);
             puntos.setHistorialPuntos(new SimpleList<>());
@@ -266,5 +266,20 @@ public class ClienteServiceImpl implements ClienteService {
         } while (!esUnico);
 
         return numeroCuenta;
+    }
+
+    @Override
+    public void actualizarPerfil(Cliente cliente) throws Exception {
+        if (cliente == null || cliente.getId() == null) {
+            throw new Exception("Cliente no válido para actualización");
+        }
+
+        // Verificar que el cliente existe en la base de datos
+        if (!clienteRepository.existsById(cliente.getId())) {
+            throw new Exception("Cliente no encontrado");
+        }
+
+        // Guardar los cambios
+        clienteRepository.save(cliente);
     }
 }

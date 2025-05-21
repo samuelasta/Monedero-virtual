@@ -9,7 +9,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -25,7 +27,9 @@ public class Monedero implements identificable {
     private String id;
 
     private String nombre;
+
     @JsonBackReference
+    @DBRef
     private Cliente propietario;
     private TipoMonedero tipoMonedero;
     private double saldo;
@@ -35,6 +39,7 @@ public class Monedero implements identificable {
 
     private LocalDateTime fechaCreacion;
     private boolean activo;
+    @Transient
     private DoubleList<Transaccion> historialTransacciones;
 
     @Override

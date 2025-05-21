@@ -6,6 +6,13 @@ import co.uniquindio.edu.mi_moneda.model.Cliente;
 public interface ClienteService {
 
     /**
+     * Actualiza la información del perfil de un cliente
+     * @param cliente Cliente con la información actualizada
+     * @throws Exception Si ocurre un error durante la actualización
+     */
+    void actualizarPerfil(Cliente cliente) throws Exception;
+
+    /**
      * Registra un nuevo cliente en el sistema
      * @param id ID del cliente (puede ser proporcionado o generado)
      * @param nombre Nombre completo del cliente
