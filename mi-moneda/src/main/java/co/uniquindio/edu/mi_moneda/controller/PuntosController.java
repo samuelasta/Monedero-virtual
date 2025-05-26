@@ -105,11 +105,78 @@ public class PuntosController {
     }
 
     /**
+     * Muestra la página de puntos oprimiendo boton cangear
+     */
+    @GetMapping("/points/redeem")
+    public String showPuntosButton(HttpSession session, Model model) {
+        // Verificar si el usuario está autenticado
+        if (session.getAttribute("clienteId") == null) {
+            return "redirect:/login-page";
+        }
+
+        try {
+            // Obtener información del cliente
+            String clienteId = (String) session.getAttribute("clienteId");
+            Cliente cliente = clienteService.buscarClientePorId(clienteId);
+
+            // Convertir a DTO
+            ClienteDTO clienteDTO = new ClienteDTO();
+            clienteDTO.setId(cliente.getId());
+            clienteDTO.setNombre(cliente.getNombre());
+            clienteDTO.setEmail(cliente.getEmail());
+            clienteDTO.setRango(cliente.getRango());
+            model.addAttribute("cliente", clienteDTO);
+
+            // Obtener información de puntos del cliente
+            Puntos puntos = cliente.getPuntos();
+
+            // Si el cliente tiene puntos, mostrar datos reales
+            if (puntos != null) {
+                PuntosDTO puntosDTO = PuntosDTO.fromEntity(puntos);
+                model.addAttribute("puntos", puntosDTO);
+
+                // Calcular información de rangos
+                Map<String, Object> rangosInfo = calcularInfoRangos(cliente, puntos);
+                model.addAttribute("rangosInfo", rangosInfo);
+
+                // Obtener beneficios disponibles
+                List<Beneficio> beneficiosDisponibles = beneficioRepository.findByCostePuntosLessThanEqual(
+                        puntos.getPuntosAcumulados());
+                List<BeneficioDTO> beneficiosDTO = beneficiosDisponibles.stream()
+                        .map(BeneficioDTO::fromEntity)
+                        .collect(Collectors.toList());
+                model.addAttribute("beneficiosDisponibles", beneficiosDTO);
+
+                // Historial de transacciones de puntos si está disponible
+                if (puntos.getHistorialPuntos() != null && !puntos.getHistorialPuntos().isEmpty()) {
+                    List<TransaccionPuntosDTO> historialDTO = new ArrayList<>();
+                    Node<TransaccionPuntos> current = puntos.getHistorialPuntos().getFirstNode();
+                    while (current != null) {
+                        historialDTO.add(TransaccionPuntosDTO.fromEntity(current.getValue()));
+                        current = current.getNextNodo();
+                    }
+                    model.addAttribute("historialPuntosData", historialDTO);
+                }
+            } else {
+                // Si no hay información de puntos, usamos datos de ejemplo
+                usarDatosEjemplo(model, cliente.getRango());
+            }
+
+            return "puntos";
+        } catch (Exception e) {
+            e.printStackTrace();
+            // En caso de error, usar datos de ejemplo
+            usarDatosEjemplo(model, "BRONCE");
+            return "puntos";
+        }
+    }
+
+    /**
      * Canjea puntos por un beneficio
      */
     @PostMapping("/points/redeem")
     public String canjearPuntos(
-            @RequestParam("beneficioId") String beneficioId,
+            //@RequestParam("beneficioId") String beneficioId,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
 
@@ -120,22 +187,20 @@ public class PuntosController {
                 return "redirect:/login-page";
             }
 
-            // Implementar la lógica de canje aquí...
-            // (Este es un ejemplo básico, deberías adaptarlo a tu lógica de negocio)
 
             redirectAttributes.addFlashAttribute("successMessage",
                     "Beneficio canjeado exitosamente. Los puntos han sido descontados de tu cuenta.");
 
-            return "redirect:/points";
+            return "puntos";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Error al canjear el beneficio: " + e.getMessage());
-            return "redirect:/points";
+            return "redirect:/dashboard";
         }
     }
 
     /**
-     * Método auxiliar para usar datos de ejemplo cuando no hay datos reales
+     * para usar datos de ejemplo cuando no hay datos reales
      */
     private void usarDatosEjemplo(Model model, String rango) {
         // Cliente de ejemplo

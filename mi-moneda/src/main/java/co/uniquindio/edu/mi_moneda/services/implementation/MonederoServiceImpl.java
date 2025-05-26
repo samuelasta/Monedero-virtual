@@ -137,7 +137,7 @@ public class MonederoServiceImpl implements MonederoService {
 
                 // Creamos un registro de transacción
                 Transaccion transaccion = new Transaccion();
-                transaccion.setId(UUID.randomUUID().toString());
+                transaccion.setId(cliente.getId());
                 transaccion.setTipo(TipoTransaccion.RETIRO);
                 transaccion.setMonto(monto);
                 transaccion.setFecha(LocalDateTime.now());
@@ -206,7 +206,7 @@ public class MonederoServiceImpl implements MonederoService {
 
                 // Creamos un registro de transacción para el que la transfirió
                 Transaccion transaccion = new Transaccion();
-                transaccion.setId(monedero.getId());
+                transaccion.setId(cliente.getId());
                 transaccion.setTipo(TipoTransaccion.TRANSFERENCIA);
                 transaccion.setMonto(monto);
                 transaccion.setFecha(LocalDateTime.now());
@@ -220,7 +220,7 @@ public class MonederoServiceImpl implements MonederoService {
                 // Creamos un registro de transacción para el que la recibe
 
                 Transaccion transaccionDestino = new Transaccion();
-                transaccion.setId(monederoDestino.getId());
+                transaccion.setId(monederoDestino.getPropietario().getId());
                 transaccion.setTipo(TipoTransaccion.TRANSFERENCIA);
                 transaccion.setMonto(monto);
                 transaccion.setFecha(LocalDateTime.now());

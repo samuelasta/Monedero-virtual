@@ -90,9 +90,6 @@ public class ProfileController {
             // Actualizar campos del cliente
             cliente.setNombre(nombre);
 
-            // Aquí se podrían actualizar campos adicionales en el modelo Cliente
-            // En el futuro si se añaden estos campos al modelo
-
             // Guardar los cambios
             clienteService.actualizarPerfil(cliente);
 

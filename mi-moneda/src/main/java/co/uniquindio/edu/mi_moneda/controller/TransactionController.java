@@ -10,6 +10,7 @@ import co.uniquindio.edu.mi_moneda.model.Monedero;
 import co.uniquindio.edu.mi_moneda.model.Transaccion;
 import co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion;
 import co.uniquindio.edu.mi_moneda.repository.MonederoRepository;
+import co.uniquindio.edu.mi_moneda.repository.TransaccionRepository;
 import co.uniquindio.edu.mi_moneda.services.interfaces.ClienteService;
 import co.uniquindio.edu.mi_moneda.services.interfaces.MonederoService;
 import co.uniquindio.edu.mi_moneda.services.interfaces.PuntosService;
@@ -45,6 +46,8 @@ public class TransactionController {
 
     @Autowired
     private MonederoRepository monederoRepository;
+    @Autowired
+    private TransaccionRepository transaccionRepository;
 
     /**
      * Muestra la página principal de transacciones
@@ -87,16 +90,15 @@ public class TransactionController {
                 model.addAttribute("selectedWalletId", walletId);
             }
 
-            // Obtener el historial de transacciones del cliente
-            List<TransaccionDTO> transaccionesDTO = new ArrayList<>();
-            if (cliente.getHistorialTransacciones() != null && !cliente.getHistorialTransacciones().isEmpty()) {
-                DoubleNode<Transaccion> currentTrans = cliente.getHistorialTransacciones().getFirstNode();
-                while (currentTrans != null) {
-                    transaccionesDTO.add(TransaccionDTO.fromEntity(currentTrans.getValue()));
-                    currentTrans = currentTrans.getNextNodo();
-                }
-            }
-            model.addAttribute("transacciones", transaccionesDTO);
+            // Buscar monederos directamente en la base de datos
+            List<Transaccion> transaccionesDB = transaccionRepository.findTransaccionById(cliente.getId());
+            List<TransaccionDTO> transaccionDTO = transaccionesDB.stream()
+                    .map(TransaccionDTO::fromEntity)
+                    .collect(Collectors.toList());
+
+            System.out.println("Número de transacciones: " + transaccionDTO.size());
+
+            model.addAttribute("transacciones", transaccionDTO);
 
             return "transactions";
         } catch (Exception e) {

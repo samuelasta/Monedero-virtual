@@ -48,7 +48,7 @@ public class Monedero implements identificable {
     }
 
     /**
-     * Generate a formatted account number for display
+     *
      * Format: XXXX-XXXX-XXXX-1234
      * @return Formatted account number
      */

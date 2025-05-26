@@ -352,7 +352,6 @@
                                             <option th:each="monedero : ${monederos}"
                                                     th:value="${monedero.id}"
                                                     th:text="${monedero.nombre} + ' - $' + ${#numbers.formatDecimal(monedero.saldo, 0, 'COMMA', 2, 'POINT')}">
-                                                Monedero Principal - $5,250.00
                                             </option>
                                         </select>
                                     </div>
@@ -552,7 +551,7 @@
                             <option th:each="monedero : ${monederos}"
                                     th:value="${monedero.id}"
                                     th:text="${monedero.nombre} + ' - $' + ${#numbers.formatDecimal(monedero.saldo, 0, 'COMMA', 2, 'POINT')}">
-                                Monedero Principal - $5,250.00
+                                Monedero
                             </option>
                         </select>
                     </div>
