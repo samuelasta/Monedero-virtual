@@ -3,14 +3,18 @@ package co.uniquindio.edu.mi_moneda.controller;
 import co.uniquindio.edu.mi_moneda.dto.ClienteDTO;
 import co.uniquindio.edu.mi_moneda.dto.MonederoDTO;
 import co.uniquindio.edu.mi_moneda.dto.TransaccionDTO;
+import co.uniquindio.edu.mi_moneda.listasPropias.DoubleList;
+import co.uniquindio.edu.mi_moneda.listasPropias.DoubleNode;
 import co.uniquindio.edu.mi_moneda.listasPropias.Node;
 import co.uniquindio.edu.mi_moneda.listasPropias.SimpleList;
 import co.uniquindio.edu.mi_moneda.model.Cliente;
 import co.uniquindio.edu.mi_moneda.model.Monedero;
 import co.uniquindio.edu.mi_moneda.model.Transaccion;
 import co.uniquindio.edu.mi_moneda.model.enums.TipoMonedero;
+import co.uniquindio.edu.mi_moneda.model.enums.TipoTransaccion;
 import co.uniquindio.edu.mi_moneda.repository.ClienteRepository;
 import co.uniquindio.edu.mi_moneda.repository.MonederoRepository;
+import co.uniquindio.edu.mi_moneda.repository.TransaccionRepository;
 import co.uniquindio.edu.mi_moneda.services.interfaces.ClienteService;
 import co.uniquindio.edu.mi_moneda.services.interfaces.MonederoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,11 +35,13 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Controller
-@RequestMapping("/wallets")
 public class MonederosController {
 
     @Autowired
     private ClienteService clienteService;
+
+    @Autowired
+    private TransaccionRepository transaccionRepository;
 
     @Autowired
     private MonederoService monederoService;
@@ -47,9 +53,9 @@ public class MonederosController {
     private ClienteRepository clienteRepository;
 
     /**
-     * Muestra la página principal de monederos
+     * LLeva hacia la ventana de wallets
      */
-    @GetMapping("")
+    @GetMapping("/wallets")
     public String showWallets(HttpSession session, Model model) {
         if (session.getAttribute("clienteId") == null) {
             return "redirect:/login-page";
@@ -69,36 +75,139 @@ public class MonederosController {
 
             model.addAttribute("cliente", clienteDTO);
 
-            // Convertir la SimpleList a una List de DTOs
+            // AQUÍ ESTÁ EL PROBLEMA: Buscar monederos directamente en la base de datos
+            // En lugar de confiar solo en la lista del cliente
+            List<Monedero> monederosDB = monederoRepository.findByPropietario(cliente);
+
+            System.out.println("=== DEBUG WALLETS ===");
+            System.out.println("Cliente ID: " + clienteId);
+            System.out.println("Cliente nombre: " + cliente.getNombre());
+            System.out.println("Monederos encontrados en DB: " + monederosDB.size());
+
+            // Convertir a DTOs
             List<MonederoDTO> monederosDTO = new ArrayList<>();
-            SimpleList<Monedero> monederosList = cliente.getMonederos();
-            if (monederosList != null && !monederosList.isEmpty()) {
-                Node<Monedero> current = monederosList.getFirstNode();
-                while (current != null) {
-                    monederosDTO.add(MonederoDTO.fromEntity(current.getValue()));
-                    current = current.getNextNodo();
-                }
+            for (Monedero monedero : monederosDB) {
+                System.out.println("Monedero encontrado: " + monedero.getNombre() + " - Saldo: " + monedero.getSaldo());
+                monederosDTO.add(MonederoDTO.fromEntity(monedero));
             }
+
             model.addAttribute("clienteMonederos", monederosDTO);
 
-            // Convertir transacciones recientes a DTOs
-            List<TransaccionDTO> transaccionesDTO = obtenerTransaccionesRecientes(cliente).stream()
-                    .map(TransaccionDTO::fromEntity)
-                    .collect(Collectors.toList());
+            // Buscar transacciones recientes directamente en la base de datos
+            List<TransaccionDTO> transaccionesDTO = obtenerTransaccionesRecientesFromDB(cliente);
             model.addAttribute("transaccionesRecientes", transaccionesDTO);
+
+            System.out.println("Transacciones encontradas: " + transaccionesDTO.size());
+            System.out.println("=====================");
 
             return "wallets";
         } catch (Exception e) {
             e.printStackTrace();
+            System.err.println("Error en showWallets: " + e.getMessage());
             session.invalidate();
             return "redirect:/login-page?error=session";
         }
     }
 
     /**
-     * Crear un nuevo monedero
+     * Obtiene las transacciones recientes directamente de la base de datos
      */
-    @PostMapping("/new")
+    private List<TransaccionDTO> obtenerTransaccionesRecientesFromDB(Cliente cliente) {
+        List<TransaccionDTO> resultado = new ArrayList<>();
+
+        try {
+            // Buscar todas las transacciones donde el cliente sea origen o destino
+            List<Transaccion> todasLasTransacciones = transaccionRepository.findAll();
+
+            // Filtrar transacciones del cliente
+            List<Transaccion> transaccionesCliente = todasLasTransacciones.stream()
+                    .filter(t -> {
+                        boolean esOrigen = t.getOrigen() != null &&
+                                t.getOrigen().getPropietario() != null &&
+                                t.getOrigen().getPropietario().getId().equals(cliente.getId());
+
+                        boolean esDestino = t.getDestino() != null &&
+                                t.getDestino().getPropietario() != null &&
+                                t.getDestino().getPropietario().getId().equals(cliente.getId());
+
+                        return esOrigen || esDestino;
+                    })
+                    .sorted((t1, t2) -> t2.getFecha().compareTo(t1.getFecha())) // Más recientes primero
+                    .limit(20) // Limitamos a 20 transacciones recientes
+                    .collect(Collectors.toList());
+
+            // Convertir a DTOs
+            for (Transaccion transaccion : transaccionesCliente) {
+                resultado.add(TransaccionDTO.fromEntity(transaccion));
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error al obtener transacciones: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return resultado;
+    }
+
+    /**
+     * Obtiene todas las transacciones del cliente para filtrado por monedero
+     */
+    private List<TransaccionDTO> obtenerTodasLasTransacciones(Cliente cliente) {
+        List<TransaccionDTO> resultado = new ArrayList<>();
+
+        // Obtener el historial completo de transacciones del cliente
+        DoubleList<Transaccion> historial = cliente.getHistorialTransacciones();
+
+        if (historial != null && !historial.isEmpty()) {
+            // Recorrer la lista doblemente enlazada desde el final (más recientes primero)
+            DoubleNode<Transaccion> nodoActual = historial.getLastNode();
+
+            while (nodoActual != null) {
+                TransaccionDTO dto = TransaccionDTO.fromEntity(nodoActual.getValue());
+                resultado.add(dto);
+                nodoActual = nodoActual.getPreviousNodo();
+            }
+        }
+
+        // Si no hay suficientes transacciones en el historial del cliente,
+        // también buscar en los historiales de los monederos
+        SimpleList<Monedero> monederos = cliente.getMonederos();
+        if (monederos != null && !monederos.isEmpty()) {
+            Node<Monedero> nodoMonedero = monederos.getFirstNode();
+
+            while (nodoMonedero != null) {
+                Monedero monedero = nodoMonedero.getValue();
+
+                if (monedero.getHistorialTransacciones() != null && !monedero.getHistorialTransacciones().isEmpty()) {
+                    DoubleNode<Transaccion> nodoTransaccion = monedero.getHistorialTransacciones().getLastNode();
+
+                    while (nodoTransaccion != null) {
+                        TransaccionDTO dto = TransaccionDTO.fromEntity(nodoTransaccion.getValue());
+
+                        // Evitar duplicados
+                        boolean yaExiste = resultado.stream()
+                                .anyMatch(t -> t.getId().equals(dto.getId()));
+
+                        if (!yaExiste) {
+                            resultado.add(dto);
+                        }
+
+                        nodoTransaccion = nodoTransaccion.getPreviousNodo();
+                    }
+                }
+
+                nodoMonedero = nodoMonedero.getNextNodo();
+            }
+        }
+
+        // Ordenar por fecha (más recientes primero) y limitar a las últimas 50
+        return resultado.stream()
+                .sorted((t1, t2) -> t2.getFecha().compareTo(t1.getFecha()))
+                .limit(50)
+                .collect(Collectors.toList());
+    }
+
+    @PostMapping("/wallets/new")
     public String crearNuevoMonedero(
             @RequestParam String nombre,
             @RequestParam(required = false) String descripcion,
@@ -115,6 +224,12 @@ public class MonederosController {
         try {
             Cliente cliente = clienteService.buscarClientePorId(clienteId);
 
+            System.out.println("=== DEBUG CREAR MONEDERO ===");
+            System.out.println("Cliente: " + cliente.getNombre());
+            System.out.println("Nombre monedero: " + nombre);
+            System.out.println("Saldo inicial: " + saldoInicial);
+            System.out.println("Tipo: " + tipoMonedero);
+
             // Creamos un nuevo monedero
             Monedero nuevoMonedero = new Monedero();
             nuevoMonedero.setId(UUID.randomUUID().toString());
@@ -125,28 +240,57 @@ public class MonederosController {
             nuevoMonedero.setNumeroCuenta(generarNumeroCuentaUnico());
             nuevoMonedero.setFechaCreacion(LocalDateTime.now());
             nuevoMonedero.setActivo(true);
+            nuevoMonedero.setHistorialTransacciones(new DoubleList<>());
 
-            // Guardar el monedero en la base de datos
             Monedero monederoGuardado = monederoRepository.save(nuevoMonedero);
 
-            // Agregar el monedero a la lista de monederos del cliente
-            SimpleList<Monedero> monederos = cliente.getMonederos();
-            if (monederos == null) {
-                monederos = new SimpleList<>();
+            System.out.println("Monedero guardado con id: " + monederoGuardado.getId());
+
+            // Si el saldo inicial es mayor que 0, le creamos una transacción de depósito inicial
+            if (saldoInicial > 0) {
+                Transaccion transaccionInicial = new Transaccion();
+                transaccionInicial.setId(UUID.randomUUID().toString());
+                transaccionInicial.setTipo(TipoTransaccion.DEPOSITO);
+                transaccionInicial.setMonto(saldoInicial);
+                transaccionInicial.setFecha(LocalDateTime.now());
+                transaccionInicial.setDescripcion("Depósito inicial al crear monedero: " + nombre);
+                transaccionInicial.setDestino(monederoGuardado);
+                transaccionInicial.setActiva(true);
+
+                // Guardar la transacción
+                transaccionRepository.save(transaccionInicial);
+
+                System.out.println("Transacción inicial creada: " + transaccionInicial.getId());
             }
-            monederos.add(monederoGuardado);
-            cliente.setMonederos(monederos);
 
-            // Guardar el cliente actualizado
-            clienteRepository.save(cliente);
+            // Actualizar la lista de monederos del cliente
+            try {
+                SimpleList<Monedero> monederos = cliente.getMonederos();
+                if (monederos == null) {
+                    monederos = new SimpleList<>();
+                }
+                monederos.add(monederoGuardado);
+                cliente.setMonederos(monederos);
+                clienteRepository.save(cliente);
 
-            redirectAttributes.addFlashAttribute("successMessage",
-                    "Monedero '" + nombre + "' creado exitosamente con saldo inicial de $" + saldoInicial);
+                System.out.println("Cliente actualizado con nuevo monedero");
+            } catch (Exception e) {
+                System.err.println("Error al actualizar cliente, pero monedero creado correctamente: " + e.getMessage());
+            }
 
+            redirectAttributes.addFlashAttribute("mostrarMensaje", true);
+            redirectAttributes.addFlashAttribute("mensaje",
+                    "Monedero '" + nombre + "' creado exitosamente con saldo inicial de $" +
+                            String.format("%,.2f", saldoInicial));
+
+            System.out.println("================================");
             return "redirect:/wallets";
+
         } catch (Exception e) {
             e.printStackTrace();
-            redirectAttributes.addFlashAttribute("errorMessage", "Error al crear el monedero: " + e.getMessage());
+            System.err.println("Error al crear monedero: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("mostrarError", true);
+            redirectAttributes.addFlashAttribute("error", "Error al crear el monedero: " + e.getMessage());
             return "redirect:/wallets";
         }
     }

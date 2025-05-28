@@ -5,6 +5,8 @@ import co.uniquindio.edu.mi_moneda.model.Puntos;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface PuntosRepository extends MongoRepository<Puntos,String> {
 
@@ -14,4 +16,6 @@ public interface PuntosRepository extends MongoRepository<Puntos,String> {
      * @return El objeto Puntos asociado al cliente
      */
     Puntos findByCliente(Cliente cliente);
+
+    Optional<Puntos> findPuntosById(String id);
 }

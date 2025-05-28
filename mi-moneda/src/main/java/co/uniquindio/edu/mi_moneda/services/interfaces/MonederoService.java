@@ -1,6 +1,7 @@
 package co.uniquindio.edu.mi_moneda.services.interfaces;
 
 
+import co.uniquindio.edu.mi_moneda.listasPropias.SimpleList;
 import co.uniquindio.edu.mi_moneda.model.Monedero;
 import co.uniquindio.edu.mi_moneda.model.Cliente;
 import co.uniquindio.edu.mi_moneda.model.Monedero;
@@ -17,5 +18,5 @@ public interface MonederoService {
 
     boolean saldoSuficiente(Monedero monedero, double monto);
 
-
+    void actualizarMonederoEnLista(SimpleList<Monedero> lista, Monedero monederoActualizado);
 }

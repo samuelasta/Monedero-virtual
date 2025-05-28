@@ -419,7 +419,7 @@
       <div class="modal-body">
         <div class="row">
           <div class="col-md-6">
-            <!-- Esta parte se actualizará dinámicamente usando JavaScript cuando se abre el modal -->
+            <!-- Información del monedero -->
             <div class="card wallet-primary mb-4">
               <div class="card-body">
                 <h6 class="card-subtitle mb-1" id="modalWalletName">Monedero Principal</h6>
@@ -431,37 +431,58 @@
                 </div>
               </div>
             </div>
+
+            <!-- Acciones rápidas -->
             <div class="d-grid gap-2">
-              <a href="#" id="depositWalletBtn" class="btn btn-outline-primary">
+              <button class="btn btn-outline-success" id="depositWalletBtn" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#depositModal">
                 <i class="bi bi-arrow-down"></i> Depositar
-              </a>
-              <a href="#" id="withdrawWalletBtn" class="btn btn-outline-primary">
+              </button>
+              <button class="btn btn-outline-danger" id="withdrawWalletBtn" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#withdrawModal">
                 <i class="bi bi-arrow-up"></i> Retirar
-              </a>
-              <a href="#" id="transferWalletBtn" class="btn btn-outline-primary">
+              </button>
+              <button class="btn btn-outline-primary" id="transferWalletBtn" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#transferModal">
                 <i class="bi bi-arrow-left-right"></i> Transferir
-              </a>
+              </button>
             </div>
           </div>
+
           <div class="col-md-6">
-            <h6>Últimas Transacciones</h6>
-            <div class="list-group" id="modalTransactionsList">
-              <!-- Este contenido se actualizará dinámicamente con JavaScript -->
-              <div class="text-center p-3">
-                <div class="spinner-border text-primary" role="status">
-                  <span class="visually-hidden">Cargando...</span>
+            <!-- Lista de transacciones -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="mb-0">
+                <i class="bi bi-clock-history me-2"></i>Últimas Transacciones
+              </h6>
+              <a href="/transactions" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-arrow-right"></i>
+              </a>
+            </div>
+
+            <div class="card" style="max-height: 400px; overflow-y: auto;">
+              <div class="list-group list-group-flush" id="modalTransactionsList">
+                <!-- Las transacciones se cargarán dinámicamente aquí -->
+                <div class="text-center p-3">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                  </div>
+                  <p class="mt-2">Cargando transacciones...</p>
                 </div>
               </div>
             </div>
-            <div class="mt-3">
-              <a href="/transactions" class="btn btn-sm btn-link">Ver todas las transacciones</a>
+
+            <!-- Enlace a todas las transacciones -->
+            <div class="mt-3 text-center">
+              <a href="/transactions" class="btn btn-sm btn-link text-decoration-none">
+                <i class="bi bi-list-ul me-1"></i>Ver historial completo
+              </a>
             </div>
           </div>
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-        <a href="#" id="editWalletBtn" class="btn btn-primary">Editar Monedero</a>
+        <button type="button" class="btn btn-outline-primary" id="editWalletBtn">
+          <i class="bi bi-pencil"></i> Editar Monedero
+        </button>
       </div>
     </div>
   </div>
@@ -474,84 +495,218 @@
 <script th:inline="javascript">
   document.addEventListener('DOMContentLoaded', function() {
     // Datos de monederos desde Thymeleaf
+    const cliente = /*[[${cliente}]]*/ {};
     const monederos = /*[[${clienteMonederos}]]*/ [];
     const transaccionesRecientes = /*[[${transaccionesRecientes}]]*/ [];
+
+    console.log('Monederos cargados:', monederos);
+    console.log('Transacciones cargadas:', transaccionesRecientes);
 
     // Manejador para el modal de detalles del monedero
     const walletCards = document.querySelectorAll('.wallet-card');
     const walletDetailsModal = document.getElementById('walletDetailsModal');
 
     if (walletCards.length > 0 && walletDetailsModal) {
-      walletCards.forEach((card) => {
+      walletCards.forEach((card, index) => {
         card.addEventListener('click', function() {
-          const walletId = this.getAttribute('data-id');
+          // Obtener el monedero correspondiente por índice
+          const monedero = monederos[index];
 
-          // Actualizar los enlaces de acción con el ID del monedero
-          document.getElementById('depositWalletBtn').href = `/transactions/deposit?walletId=${walletId}`;
-          document.getElementById('withdrawWalletBtn').href = `/transactions/withdraw?walletId=${walletId}`;
-          document.getElementById('transferWalletBtn').href = `/transactions/transfer?walletId=${walletId}`;
-          document.getElementById('editWalletBtn').href = `/wallets/edit/${walletId}`;
+          if (!monedero) {
+            console.error('No se encontró el monedero para el índice:', index);
+            return;
+          }
 
-          // Actualizar los datos del monedero en el modal
-          document.getElementById('modalWalletName').textContent = card.querySelector('.card-subtitle').textContent;
-          document.getElementById('modalWalletNumber').textContent = card.querySelector('.wallet-number').textContent;
-          document.getElementById('modalWalletBalance').textContent = card.querySelector('.wallet-balance').textContent;
+          console.log('Monedero seleccionado:', monedero);
 
-          // Aquí cargaríamos las transacciones del monedero específico
-          // idealmente con una llamada AJAX para no recargar la página
-          // Por ahora, solo mostraremos un mensaje
-          const transactionsList = document.getElementById('modalTransactionsList');
-          transactionsList.innerHTML = '<div class="text-center p-3"><p>Cargando transacciones...</p></div>';
+          // Actualizar la información del monedero en el modal
+          document.getElementById('modalWalletName').textContent = monedero.nombre;
+          document.getElementById('modalWalletNumber').textContent = formatearNumeroCuenta(monedero.numeroCuenta);
+          document.getElementById('modalWalletBalance').textContent = '$' + formatearMonto(monedero.saldo);
 
-          // Simulamos una carga asíncrona
-          setTimeout(() => {
-            // Buscar transacciones para este monedero específico
-            // En un entorno real, esto sería una llamada a la API
+          // Actualizar fecha de creación si existe
+          const modalWalletCreated = document.getElementById('modalWalletCreated');
+          if (modalWalletCreated && monedero.fechaCreacion) {
+            const fecha = new Date(monedero.fechaCreacion);
+            modalWalletCreated.textContent = 'Creado: ' + fecha.toLocaleDateString('es-CO');
+          }
 
-            let transactionsHtml = '';
+          // Filtrar y mostrar las transacciones de este monedero específico
+          mostrarTransaccionesDelMonedero(monedero.id, monedero.nombre);
+        });
+      });
+    }
 
-            // Si no hay transacciones, mostrar mensaje
-            if (transaccionesRecientes.length === 0) {
-              transactionsHtml = '<div class="text-center p-3"><p>No hay transacciones recientes.</p></div>';
-            } else {
-              // Mostrar algunas transacciones (limitadas a 2 para el modal)
-              transactionsHtml = `
-                <a href="#" class="list-group-item list-group-item-action">
-                  <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1">Depósito</h6>
-                    <small class="text-success">+$500.00</small>
-                  </div>
-                  <p class="mb-1">Depósito en efectivo</p>
-                  <small class="text-muted">Hoy, 10:30 AM</small>
-                </a>
-                <a href="#" class="list-group-item list-group-item-action">
-                  <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1">Transferencia saliente</h6>
-                    <small class="text-danger">-$150.00</small>
-                  </div>
-                  <p class="mb-1">Pago de servicio</p>
-                  <small class="text-muted">Ayer, 3:45 PM</small>
-                </a>
-              `;
+    // Función para filtrar y mostrar las transacciones de un monedero específico
+    function mostrarTransaccionesDelMonedero(monederoId, monederoNombre) {
+      const transactionsList = document.getElementById('modalTransactionsList');
+
+      // Mostrar loading inicialmente
+      transactionsList.innerHTML = `
+        <div class="text-center p-3">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+          </div>
+          <p class="mt-2">Cargando transacciones...</p>
+        </div>
+      `;
+
+      // Simular un pequeño delay para mejor UX
+      setTimeout(() => {
+        // Filtrar las transacciones que pertenecen a este monedero
+        const transaccionesDelMonedero = transaccionesRecientes.filter(transaccion => {
+          // Verificar si la transacción pertenece a este monedero
+          // Puede ser origen o destino
+          return (transaccion.origenNombre === monederoNombre ||
+                  transaccion.destinoNombre === monederoNombre);
+        });
+
+        console.log('Transacciones filtradas para', monederoNombre, ':', transaccionesDelMonedero);
+
+        let transactionsHtml = '';
+
+        if (transaccionesDelMonedero.length === 0) {
+          transactionsHtml = `
+            <div class="text-center p-4">
+              <i class="bi bi-inbox fs-1 text-muted"></i>
+              <p class="mt-3 text-muted">No hay transacciones recientes para este monedero.</p>
+              <small class="text-muted">Las nuevas transacciones aparecerán aquí.</small>
+            </div>
+          `;
+        } else {
+          // Mostrar máximo 5 transacciones más recientes para el modal
+          const transaccionesMostrar = transaccionesDelMonedero.slice(0, 5);
+
+          transaccionesMostrar.forEach(transaccion => {
+            const esEntrada = transaccion.destinoNombre === monederoNombre;
+            const esSalida = transaccion.origenNombre === monederoNombre;
+
+            let iconClass = '';
+            let amountClass = '';
+            let amountPrefix = '';
+            let tipoTexto = '';
+
+            // Determinar el tipo de transacción desde la perspectiva de este monedero
+            if (transaccion.tipo === 'DEPOSITO') {
+              iconClass = 'bi-arrow-down';
+              amountClass = 'text-success';
+              amountPrefix = '+';
+              tipoTexto = 'Depósito';
+            } else if (transaccion.tipo === 'RETIRO') {
+              iconClass = 'bi-arrow-up';
+              amountClass = 'text-danger';
+              amountPrefix = '-';
+              tipoTexto = 'Retiro';
+            } else if (transaccion.tipo === 'TRANSFERENCIA') {
+              if (esEntrada) {
+                iconClass = 'bi-arrow-down-left';
+                amountClass = 'text-success';
+                amountPrefix = '+';
+                tipoTexto = 'Transferencia recibida';
+              } else if (esSalida) {
+                iconClass = 'bi-arrow-up-right';
+                amountClass = 'text-danger';
+                amountPrefix = '-';
+                tipoTexto = 'Transferencia enviada';
+              }
             }
 
-            transactionsList.innerHTML = transactionsHtml;
-          }, 500);
+            transactionsHtml += `
+              <a href="#" class="list-group-item list-group-item-action transaction-item"
+                 data-transaction-id="${transaccion.id}">
+                <div class="d-flex align-items-center">
+                  <div class="me-3">
+                    <i class="bi ${iconClass} fs-5 ${amountClass}"></i>
+                  </div>
+                  <div class="flex-grow-1">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h6 class="mb-1">${tipoTexto}</h6>
+                      <small class="${amountClass} fw-bold">${amountPrefix}$${transaccion.montoFormateado}</small>
+                    </div>
+                    <p class="mb-1 text-truncate">${transaccion.descripcion || 'Sin descripción'}</p>
+                    <small class="text-muted">
+                      <i class="bi bi-clock me-1"></i>${transaccion.fechaFormateada}
+                      ${transaccion.activa ?
+                    '<span class="badge bg-success ms-2" style="font-size: 0.7em;">Completada</span>' :
+                    '<span class="badge bg-danger ms-2" style="font-size: 0.7em;">Revertida</span>'
+            }
+                    </small>
+                  </div>
+                </div>
+              </a>
+            `;
+          });
+
+          // Agregar enlace para ver más si hay más transacciones
+          if (transaccionesDelMonedero.length > 5) {
+            transactionsHtml += `
+              <div class="text-center p-2 border-top">
+                <a href="/transactions?monedero=${monederoId}" class="btn btn-sm btn-outline-primary">
+                  Ver todas las transacciones (${transaccionesDelMonedero.length})
+                </a>
+              </div>
+            `;
+          }
+        }
+
+        transactionsList.innerHTML = transactionsHtml;
+
+        // Agregar event listeners para los items de transacción
+        const transactionItems = transactionsList.querySelectorAll('.transaction-item');
+        transactionItems.forEach(item => {
+          item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const transactionId = this.getAttribute('data-transaction-id');
+            mostrarDetalleTransaccion(transactionId);
+          });
         });
-      });
+
+      }, 300); // 300ms de delay para simular carga
     }
 
-    // Manejador para el botón de eliminar monedero
-    const deleteButtons = document.querySelectorAll('[data-bs-target="#deleteWalletModal"]');
-    if (deleteButtons.length > 0) {
-      deleteButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-          e.stopPropagation(); // Evitar que se active el modal de detalles del monedero
-          const walletId = this.getAttribute('data-wallet-id');
-          document.getElementById('deleteWalletId').value = walletId;
-        });
-      });
+    // Función para mostrar detalles de una transacción específica
+    function mostrarDetalleTransaccion(transactionId) {
+      const transaccion = transaccionesRecientes.find(t => t.id === transactionId);
+
+      if (transaccion) {
+        // Aquí podrías abrir otro modal con los detalles completos
+        // O hacer una llamada AJAX para obtener más detalles
+        console.log('Mostrar detalles de transacción:', transaccion);
+
+        // Por ahora, mostrar un alert con la información
+        alert(`Detalles de la transacción:
+ID: ${transaccion.id}
+Tipo: ${transaccion.tipo}
+Monto: $${transaccion.montoFormateado}
+Fecha: ${transaccion.fechaFormateada}
+Descripción: ${transaccion.descripcion || 'Sin descripción'}`);
+      }
     }
+
+    // Función auxiliar para formatear números de cuenta
+    function formatearNumeroCuenta(numeroCuenta) {
+      if (!numeroCuenta || numeroCuenta.length < 10) {
+        return numeroCuenta || 'N/A';
+      }
+
+      // Formatear como XXXX-XXXX-XX
+      return numeroCuenta.replace(/(\d{4})(\d{4})(\d{2})/, '$1-$2-$3');
+    }
+
+    // Función auxiliar para formatear montos
+    function formatearMonto(monto) {
+      return new Intl.NumberFormat('es-CO', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(monto);
+    }
+
+    // Agregar data-id a las tarjetas de monederos si no lo tienen
+    walletCards.forEach((card, index) => {
+      if (!card.hasAttribute('data-id') && monederos[index]) {
+        card.setAttribute('data-id', monederos[index].id);
+      }
+    });
   });
 </script>
 </body>

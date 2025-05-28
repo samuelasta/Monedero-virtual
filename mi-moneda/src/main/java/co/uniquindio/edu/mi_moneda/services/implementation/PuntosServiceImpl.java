@@ -48,24 +48,24 @@ public class PuntosServiceImpl implements PuntosService {
             return false;
         }
 
-        // 1. Buscar el objeto Puntos existente del cliente por ID de cliente
+        // Buscamos el objeto Puntos existente del cliente por ID de cliente
         Puntos puntosCliente = null;
 
         // Primero, verificar si el cliente ya tiene una referencia a puntos
         if (cliente.getPuntos() != null && cliente.getPuntos().getId() != null) {
             // Buscar por ID para asegurarnos de obtener el documento más reciente
-            Optional<Puntos> puntosExistentes = puntosRepository.findById(cliente.getPuntos().getId());
+            Optional<Puntos> puntosExistentes = puntosRepository.findPuntosById(cliente.getId());
             if (puntosExistentes.isPresent()) {
                 puntosCliente = puntosExistentes.get();
             }
         }
 
-        // Si no se encontró por ID, buscar por cliente
+        // si no se encontró por ID, buscamos por cliente
         if (puntosCliente == null) {
             puntosCliente = puntosRepository.findByCliente(cliente);
         }
 
-        // 2. Si no existe, crear un nuevo objeto Puntos
+        // si no existe, creamos un nuevo objeto Puntos
         if (puntosCliente == null) {
             puntosCliente = Puntos.builder()
                     .id(UUID.randomUUID().toString())
@@ -81,16 +81,19 @@ public class PuntosServiceImpl implements PuntosService {
             clienteRepository.save(cliente);
         }
 
-        // 3. Incrementar puntos
+        // Incrementar los puntos
         double puntosActualizados = puntosCliente.getPuntosAcumulados() + puntos;
         puntosCliente.setPuntosAcumulados(puntosActualizados);
 
-        // 4. Verificar el historial de puntos
+        cliente.setPuntos(puntosCliente);
+        clienteRepository.save(cliente);
+
+        //  Verificar el historial de puntos
         if (puntosCliente.getHistorialPuntos() == null) {
             puntosCliente.setHistorialPuntos(new SimpleList<>());
         }
 
-        // 5. Crear y guardar la transacción de puntos
+        //  Crear y guardar la transacción de puntos
         TransaccionPuntos transaccionPuntos = TransaccionPuntos.builder()
                 .id(UUID.randomUUID().toString())
                 .tipo(TipoTransaccionPuntos.ACUMULACION)
@@ -102,13 +105,13 @@ public class PuntosServiceImpl implements PuntosService {
         // Guardar la transacción
         transaccionPuntos = transaccionPuntosRepository.save(transaccionPuntos);
 
-        // 6. Añadir la transacción al historial
+        //  Añadir la transacción al historial
         puntosCliente.getHistorialPuntos().add(transaccionPuntos);
 
-        // 7. Guardar solo el objeto de puntos actualizado
+        // Guardar solo el objeto de puntos actualizado
         puntosRepository.save(puntosCliente);
 
-        // 8. Actualizar el rango del cliente
+        // Actualizar el rango del cliente
         actualizarRangoCliente(cliente);
 
         return true;
@@ -163,7 +166,7 @@ public class PuntosServiceImpl implements PuntosService {
         double puntosTotales = cliente.getPuntos().getPuntosAcumulados();
         String nuevoRango;
 
-        // Lógica para determinar el rango según los puntos
+
         if (puntosTotales <= 500) {
             nuevoRango = "BRONCE";
         } else if (puntosTotales > 500 && puntosTotales <= 1000) {

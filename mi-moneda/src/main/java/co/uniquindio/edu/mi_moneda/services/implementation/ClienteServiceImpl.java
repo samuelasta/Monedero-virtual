@@ -64,6 +64,7 @@ public class ClienteServiceImpl implements ClienteService {
             cliente.setNombre(nombre);
             cliente.setEmail(email);
             cliente.setPassword(passwordEncoder.encode(password));
+            cliente.setPuntos(new Puntos());
             cliente.setRango("BRONCE");
             cliente.setMonederos(new SimpleList<>());
             cliente.setHistorialTransacciones(new DoubleList<>());
@@ -74,7 +75,7 @@ public class ClienteServiceImpl implements ClienteService {
             Cliente clienteGuardado = clienteRepository.save(cliente);
 
             // Creamos y asociamos los puntos
-            Puntos puntos = new Puntos();
+            Puntos puntos = cliente.getPuntos();
             puntos.setId(clienteGuardado.getId());
             puntos.setCliente(clienteGuardado);
             puntos.setPuntosAcumulados(0);
@@ -133,7 +134,7 @@ public class ClienteServiceImpl implements ClienteService {
             monederoNomina = monederoRepository.save(monederoNomina);
 
             // Añadimos los monederos a la lista del cliente
-            SimpleList<Monedero> monederos = new SimpleList<>();
+            SimpleList<Monedero> monederos = cliente.getMonederos();
             monederos.add(monederoPrincipal);
             monederos.add(monederoAhorros);
             monederos.add(monederoNomina);

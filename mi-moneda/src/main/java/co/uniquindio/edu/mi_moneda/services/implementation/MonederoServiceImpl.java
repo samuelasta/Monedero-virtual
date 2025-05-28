@@ -1,6 +1,8 @@
 package co.uniquindio.edu.mi_moneda.services.implementation;
 
 import co.uniquindio.edu.mi_moneda.listasPropias.DoubleList;
+import co.uniquindio.edu.mi_moneda.listasPropias.Node;
+import co.uniquindio.edu.mi_moneda.listasPropias.SimpleList;
 import co.uniquindio.edu.mi_moneda.model.Cliente;
 import co.uniquindio.edu.mi_moneda.model.Monedero;
 import co.uniquindio.edu.mi_moneda.model.Transaccion;
@@ -65,6 +67,9 @@ public class MonederoServiceImpl implements MonederoService {
                 // Guardamos el monedero actualizado
                 monederoRepository.save(monedero);
 
+                // Actualizamos la copia local del monedero en la lista del cliente
+                actualizarMonederoEnLista(cliente.getMonederos(), monedero);
+
                 // Creamos un registro de transacción
                 Transaccion transaccion = new Transaccion();
                 transaccion.setId(cliente.getId());
@@ -80,7 +85,7 @@ public class MonederoServiceImpl implements MonederoService {
 
                 double puntosCliente = puntosService.calcularPuntosPorTransaccion(transaccion);
                 String motivo = "Deposito realizado";
-                puntosService.acumularPuntosCliente(cliente, puntosCliente, motivo );
+                puntosService.acumularPuntosCliente(cliente, puntosCliente, motivo);
 
                 // Agregamos la transacción al historial del monedero
                 if (monedero.getHistorialTransacciones() == null) {
@@ -134,6 +139,8 @@ public class MonederoServiceImpl implements MonederoService {
                 // Guardamos el monedero actualizado
                 monederoRepository.save(monedero);
 
+                // Actualizamos la copia local del monedero en la lista del cliente
+                actualizarMonederoEnLista(cliente.getMonederos(), monedero);
 
                 // Creamos un registro de transacción
                 Transaccion transaccion = new Transaccion();
@@ -199,10 +206,13 @@ public class MonederoServiceImpl implements MonederoService {
                 monederoDestino.setSaldo(monederoDestino.getSaldo() + monto);
 
 
-
                 // Guardamos el monedero actualizado
                 monederoRepository.save(monedero);
                 monederoRepository.save(monederoDestino);
+
+                // Actualizamos la copia local del monedero en la lista del cliente
+                actualizarMonederoEnLista(cliente.getMonederos(), monedero);
+                actualizarMonederoEnLista(monederoDestino.getPropietario().getMonederos(), monederoDestino);
 
                 // Creamos un registro de transacción para el que la transfirió
                 Transaccion transaccion = new Transaccion();
@@ -233,7 +243,7 @@ public class MonederoServiceImpl implements MonederoService {
 
                 double puntosCliente = puntosService.calcularPuntosPorTransaccion(transaccion);
                 String motivo = "Transacción realizada";
-                puntosService.acumularPuntosCliente(cliente, puntosCliente, motivo );
+                puntosService.acumularPuntosCliente(cliente, puntosCliente, motivo);
 
                 // Agregamos la transacción al historial del monedero
                 if (monedero.getHistorialTransacciones() == null) {
@@ -280,6 +290,20 @@ public class MonederoServiceImpl implements MonederoService {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void actualizarMonederoEnLista(SimpleList<Monedero> lista, Monedero monederoActualizado) {
+        Node<Monedero> nodoActual = lista.getFirstNode();
+        while (nodoActual != null) {
+            // Verifica si el ID coincide
+            if (nodoActual.getValue().getId().equals(monederoActualizado.getId())) {
+                // Actualiza el saldo
+                nodoActual.getValue().setSaldo(monederoActualizado.getSaldo());
+                break;
+            }
+            nodoActual = nodoActual.getNextNodo();
+        }
     }
 }
 

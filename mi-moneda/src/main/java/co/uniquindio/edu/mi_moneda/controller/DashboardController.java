@@ -93,30 +93,32 @@ public class DashboardController {
         }
 
         try {
-            // Obtener información del cliente
+            // Obtiene información del cliente
             String clienteId = (String) session.getAttribute("clienteId");
             Cliente cliente = clienteService.buscarClientePorId(clienteId);
 
-            // Calcular el balance total sumando saldos de todos los monederos
+            // Calcula el balance total sumando saldos de todos los monederos
             double balanceTotal = calcularBalanceTotal(cliente);
 
-            // Buscar las transacciones más recientes del cliente
+            // Busca las transacciones más recientes del cliente
             List<Transaccion> transaccionesRecientes = obtenerTransaccionesRecientes(cliente);
 
-            // Obtener transacciones programadas próximas
+            // Obtiene las transacciones programadas próximas
             List<TransaccionProgramada> transaccionesProgramadas = obtenerTransaccionesProgramadas(cliente);
 
             // Obtener las notificaciones no leídas
             List<Notificacion> notificacionesNoLeidas = obtenerNotificacionesNoLeidas(cliente);
 
-            // Crear DTO de cliente con toda la información
+            // Creamos el DTO de cliente con toda la información
             ClienteDTO clienteDTO = ClienteDTO.fromEntity(cliente, balanceTotal,
                     transaccionesRecientes,
                     transaccionesProgramadas,
                     notificacionesNoLeidas);
             model.addAttribute("cliente", clienteDTO);
 
-            // Añadir atributos adicionales al modelo
+
+            System.out.println(balanceTotal);
+
             model.addAttribute("balanceTotal", balanceTotal);
             model.addAttribute("cantidadMonederos", obtenerCantidadMonederos(cliente));
 
@@ -140,11 +142,10 @@ public class DashboardController {
             model.addAttribute("cantidadNotificaciones", notificacionesNoLeidas.size());
 
             // Obtener información de puntos del cliente
-            Puntos puntos = cliente.getPuntos();
-            if (puntos == null) {
-                puntos = new Puntos();
-                puntos.setPuntosAcumulados(0);
-                puntos.setHistorialPuntos(new SimpleList<>());
+            Optional<Puntos> puntos1 = puntosRepository.findPuntosById(cliente.getId());
+            Puntos puntos = new Puntos();
+            if(puntos1.isPresent()){
+                puntos = puntos1.get();
             }
 
             // Convertir puntos a DTO
@@ -179,21 +180,19 @@ public class DashboardController {
     }
 
 
-    // [Métodos de cálculo y obtención de datos]
 
     /**
      * Calcula el balance total de todos los monederos
      */
     private double calcularBalanceTotal(Cliente cliente) {
         double total = 0.0;
-        SimpleList<Monedero> monederos = obtenerMonederos(cliente);
+        SimpleList<Monedero> monederos = cliente.getMonederos();
 
         // Si no hay monederos, devuelve 0
         if (monederos == null || monederos.isEmpty()) {
             return 0.0;
         }
 
-        // Recorrer la lista de monederos usando nuestras estructuras personalizadas
         Node<Monedero> nodoActual = monederos.getFirstNode();
         while (nodoActual != null) {
             total += nodoActual.getValue().getSaldo();
@@ -219,7 +218,6 @@ public class DashboardController {
                         m.getPropietario().getId().equals(cliente.getId()))
                 .toList();
 
-        // Añadimos a nuestra estructura personalizada SimpleList
         for (Monedero m : monederosEncontrados) {
             monederos.add(m);
         }
@@ -332,15 +330,15 @@ public class DashboardController {
 
         if ("BRONCE".equals(rangoActual)) {
             siguienteRango = "PLATA";
-            puntosNecesarios = 1000 - puntosActuales;
+            puntosNecesarios = 500 - puntosActuales;
             porcentaje = (puntosActuales / 1000.0) * 100;
         } else if ("PLATA".equals(rangoActual)) {
             siguienteRango = "ORO";
-            puntosNecesarios = 5000 - puntosActuales;
+            puntosNecesarios = 1000 - puntosActuales;
             porcentaje = ((puntosActuales - 1000) / 4000.0) * 100;
         } else if ("ORO".equals(rangoActual)) {
             siguienteRango = "PLATINO";
-            puntosNecesarios = 15000 - puntosActuales;
+            puntosNecesarios = 5000 - puntosActuales;
             porcentaje = ((puntosActuales - 5000) / 10000.0) * 100;
         } else {
             siguienteRango = "MÁXIMO NIVEL";
