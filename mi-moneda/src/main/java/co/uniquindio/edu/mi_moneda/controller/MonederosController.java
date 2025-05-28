@@ -228,9 +228,8 @@ public class MonederosController {
             System.out.println("Cliente: " + cliente.getNombre());
             System.out.println("Nombre monedero: " + nombre);
             System.out.println("Saldo inicial: " + saldoInicial);
-            System.out.println("Tipo: " + tipoMonedero);
 
-            // Creamos un nuevo monedero
+            // Crear el nuevo monedero
             Monedero nuevoMonedero = new Monedero();
             nuevoMonedero.setId(UUID.randomUUID().toString());
             nuevoMonedero.setNombre(nombre);
@@ -242,11 +241,23 @@ public class MonederosController {
             nuevoMonedero.setActivo(true);
             nuevoMonedero.setHistorialTransacciones(new DoubleList<>());
 
+            // Guardar el monedero en la base de datos
             Monedero monederoGuardado = monederoRepository.save(nuevoMonedero);
 
-            System.out.println("Monedero guardado con id: " + monederoGuardado.getId());
+            // CRÍTICO: Actualizar la lista enlazada del cliente ANTES de guardar el cliente
+            SimpleList<Monedero> monederos = cliente.getMonederos();
+            if (monederos == null) {
+                monederos = new SimpleList<>();
+            }
 
-            // Si el saldo inicial es mayor que 0, le creamos una transacción de depósito inicial
+            // Añadir el nuevo monedero a la lista enlazada
+            monederos.add(monederoGuardado);
+            cliente.setMonederos(monederos);
+
+            // Guardar el cliente con la lista actualizada ANTES de crear la transacción
+            Cliente clienteActualizado = clienteRepository.save(cliente);
+
+            // Crear transacción inicial si hay saldo inicial
             if (saldoInicial > 0) {
                 Transaccion transaccionInicial = new Transaccion();
                 transaccionInicial.setId(UUID.randomUUID().toString());
@@ -260,35 +271,34 @@ public class MonederosController {
                 // Guardar la transacción
                 transaccionRepository.save(transaccionInicial);
 
+                // Actualizar historial del cliente usando su lista enlazada
+                DoubleList<Transaccion> historial = clienteActualizado.getHistorialTransacciones();
+                if (historial == null) {
+                    historial = new DoubleList<>();
+                }
+                historial.add(transaccionInicial);
+                clienteActualizado.setHistorialTransacciones(historial);
+
+                // Guardar cliente con historial actualizado
+                clienteRepository.save(clienteActualizado);
+
                 System.out.println("Transacción inicial creada: " + transaccionInicial.getId());
             }
 
-            // Actualizar la lista de monederos del cliente
-            try {
-                SimpleList<Monedero> monederos = cliente.getMonederos();
-                if (monederos == null) {
-                    monederos = new SimpleList<>();
-                }
-                monederos.add(monederoGuardado);
-                cliente.setMonederos(monederos);
-                clienteRepository.save(cliente);
-
-                System.out.println("Cliente actualizado con nuevo monedero");
-            } catch (Exception e) {
-                System.err.println("Error al actualizar cliente, pero monedero creado correctamente: " + e.getMessage());
-            }
+            // FORZAR ACTUALIZACIÓN EN SESIÓN para que el dashboard se recargue
+            session.setAttribute("clienteActualizado", true);
 
             redirectAttributes.addFlashAttribute("mostrarMensaje", true);
             redirectAttributes.addFlashAttribute("mensaje",
                     "Monedero '" + nombre + "' creado exitosamente con saldo inicial de $" +
                             String.format("%,.2f", saldoInicial));
 
+            System.out.println("Monedero creado y cliente actualizado correctamente");
             System.out.println("================================");
-            return "redirect:/wallets";
+            return "redirect:/dashboard"; // CAMBIO: Redirigir al dashboard para ver el cambio inmediatamente
 
         } catch (Exception e) {
             e.printStackTrace();
-            System.err.println("Error al crear monedero: " + e.getMessage());
             redirectAttributes.addFlashAttribute("mostrarError", true);
             redirectAttributes.addFlashAttribute("error", "Error al crear el monedero: " + e.getMessage());
             return "redirect:/wallets";

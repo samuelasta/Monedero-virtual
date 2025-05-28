@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonederoApp - Términos y Condiciones</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .terms-container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+        .card {
+            border-radius: 1rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            border: none;
+        }
+        .terms-header {
+            background: linear-gradient(135deg, #2575fc 0%, #6a11cb 100%);
+            color: white;
+            border-radius: 1rem 1rem 0 0;
+            padding: 2rem;
+            text-align: center;
+        }
+        .terms-content {
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        .terms-section {
+            margin-bottom: 2rem;
+        }
+        .terms-section h3 {
+            color: #2575fc;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 1rem;
+            border-left: 4px solid #ffc107;
+            margin: 1rem 0;
+        }
+        .contact-info {
+            background-color: #e7f3ff;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin: 1.5rem 0;
+        }
+    </style>
+</head>
+<body>
+<div class="container terms-container">
+    <div class="card">
+        <div class="terms-header">
+            <h1><i class="bi bi-shield-check me-3"></i>Términos y Condiciones</h1>
+            <p class="mb-0">MonederoApp - Monedero Virtual</p>
+            <small>Última actualización: 1 de enero de 2024</small>
+        </div>
+
+        <div class="terms-content">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <strong>Importante:</strong> Por favor, lee cuidadosamente estos términos y condiciones antes de usar nuestros servicios.
+            </div>
+
+            <div class="terms-section">
+                <h3>1. Aceptación de los Términos</h3>
+                <p>Al registrarte y usar MonederoApp, aceptas estar sujeto a estos términos y condiciones. Si no estás de acuerdo con alguno de estos términos, no utilices nuestros servicios.</p>
+
+                <div class="highlight">
+                    <strong>Nota importante:</strong> Estos términos constituyen un acuerdo legal entre tú y MonederoApp.
+                </div>
+            </div>
+
+            <div class="terms-section">
+                <h3>2. Descripción del Servicio</h3>
+                <p>MonederoApp es una plataforma de monedero virtual que te permite:</p>
+                <ul>
+                    <li>Crear y gestionar múltiples monederos virtuales</li>
+                    <li>Realizar transacciones de depósito, retiro y transferencia</li>
+                    <li>Programar transacciones futuras</li>
+                    <li>Acumular puntos y canjear beneficios</li>
+                    <li>Analizar tus patrones de gasto</li>
+                    <li>Recibir notificaciones sobre tu actividad financiera</li>
+                </ul>
+            </div>
+
+            <div class="terms-section">
+                <h3>3. Registro y Cuenta de Usuario</h3>
+                <p><strong>3.1 Elegibilidad:</strong> Debes ser mayor de 18 años para usar nuestros servicios.</p>
+                <p><strong>3.2 Información Precisa:</strong> Te comprometes a proporcionar información veraz y actualizada durante el registro.</p>
+                <p><strong>3.3 Seguridad de la Cuenta:</strong> Eres responsable de mantener la confidencialidad de tu contraseña y de toda la actividad que ocurra en tu cuenta.</p>
+                <p><strong>3.4 Una Cuenta por Usuario:</strong> Solo puedes tener una cuenta activa por persona.</p>
+            </div>
+
+            <div class="terms-section">
+                <h3>4. Uso de los Servicios</h3>
+                <p><strong>4.1 Uso Permitido:</strong> Puedes usar MonederoApp únicamente para fines legales y de acuerdo con estos términos.</p>
+                <p><strong>4.2 Prohibiciones:</strong> No puedes:</p>
+                <ul>
+                    <li>Usar el servicio para actividades ilegales o fraudulentas</li>
+                    <li>Intentar acceder a cuentas de otros usuarios</li>
+                    <li>Interferir con el funcionamiento del servicio</li>
+                    <li>Transmitir virus o código malicioso</li>
+                    <li>Usar el servicio para spam o comunicaciones no solicitadas</li>
+                </ul>
+            </div>
+
+            <div class="terms-section">
+                <h3>5. Transacciones y Tarifas</h3>
+                <p><strong>5.1 Tipos de Transacciones:</strong> Puedes realizar depósitos, retiros y transferencias según la disponibilidad del servicio.</p>
+                <p><strong>5.2 Límites:</strong> Podemos establecer límites diarios, semanales o mensuales para las transacciones.</p>
+                <p><strong>5.3 Tarifas:</strong> Algunas transacciones pueden estar sujetas a tarifas que se te comunicarán antes de completar la operación.</p>
+                <p><strong>5.4 Reversión:</strong> Las transacciones completadas no pueden ser revertidas excepto en casos de error del sistema o fraude comprobado.</p>
+            </div>
+
+            <div class="terms-section">
+                <h3>6. Programa de Puntos</h3>
+                <p><strong>6.1 Acumulación:</strong> Ganas puntos por usar nuestros servicios según las reglas del programa.</p>
+                <p><strong>6.2 Canje:</strong> Los puntos pueden canjearse por beneficios disponibles en la plataforma.</p>
+                <p><strong>6.3 Expiración:</strong> Los puntos no utilizados pueden expirar según las políticas del programa.</p>
+                <p><strong>6.4 Modificaciones:</strong> Nos reservamos el derecho de modificar el programa de puntos con previo aviso.</p>
+            </div>
+
+            <div class="terms-section">
+                <h3>7. Privacidad y Protección de Datos</h3>
+                <p><strong>7.1 Recopilación de Información:</strong> Recopilamos información necesaria para proporcionar nuestros servicios.</p>
+                <p><strong>7.2 Uso de Datos:</strong> Utilizamos tu información para:</p>
+                <ul>
+                    <li>Proporcionar y mejorar nuestros servicios</li>
+                    <li>Procesar transacciones</li>
+                    <li>Comunicarnos contigo</li>
+                    <li>Cumplir con obligaciones legales</li>
+                    <li>Prevenir fraudes</li>
+                </ul>
+                <p><strong>7.3 Protección:</strong> Implementamos medidas de seguridad para proteger tu información personal.</p>
+                <p><strong>7.4 Compartir Información:</strong> No vendemos tu información personal a terceros.</p>
+            </div>
+
+            <div class="terms-section">
+                <h3>8. Responsabilidades y Limitaciones</h3>
+                <p><strong>8.1 Disponibilidad:</strong> Nos esforzamos por mantener el servicio disponible, pero no garantizamos operación ininterrumpida.</p>
+                <p><strong>8.2 Limitación de Responsabilidad:</strong> No seremos responsables por daños indirectos, incidentales o consecuenciales.</p>
+                <p><strong>8.3 Fuerza Mayor:</strong> No seremos responsables por incumplimientos debido a causas fuera de nuestro control.</p>
+            </div>
+
+            <div class="terms-section">
+                <h3>9. Suspensión y Terminación</h3>
+                <p><strong>9.1 Suspensión:</strong> Podemos suspender tu cuenta si violas estos términos o por razones de seguridad.</p>
+                <p><strong>9.2 Terminación:</strong> Puedes cerrar tu cuenta en cualquier momento contactándonos.</p>
+                <p><strong>9.3 Efectos de la Terminación:</strong> Al cerrar tu cuenta, perderás acceso a los servicios y cualquier punto no canjeado.</p>
+            </div>
+
+            <div class="terms-section">
+                <h3>10. Modificaciones</h3>
+                <p>Nos reservamos el derecho de modificar estos términos en cualquier momento. Te notificaremos sobre cambios importantes y tu uso continuado del servicio constituirá aceptación de los términos modificados.</p>
+            </div>
+
+            <div class="terms-section">
+                <h3>11. Ley Aplicable</h3>
+                <p>Estos términos se rigen por las leyes de Colombia. Cualquier disputa será resuelta en los tribunales competentes de Colombia.</p>
+            </div>
+
+            <div class="contact-info">
+                <h3><i class="bi bi-envelope me-2"></i>Contacto</h3>
+                <p>Si tienes preguntas sobre estos términos y condiciones, puedes contactarnos:</p>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-envelope me-2"></i>Email: virtualwalletbilleteravirtual@gmail.com</li>
+                    <li><i class="bi bi-telephone me-2"></i>Teléfono: +57 3192325795</li>
+                    <li><i class="bi bi-geo-alt me-2"></i>Dirección: Universidad Quindio, Armenia, Colombia</li>
+                </ul>
+            </div>
+
+            <div class="text-center mt-4">
+                <button onclick="window.close()" class="btn btn-secondary me-3">
+                    <i class="bi bi-x-lg me-2"></i>Cerrar
+                </button>
+                <a href="/login-page" class="btn btn-primary">
+                    <i class="bi bi-arrow-left me-2"></i>Volver al Registro
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JS Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

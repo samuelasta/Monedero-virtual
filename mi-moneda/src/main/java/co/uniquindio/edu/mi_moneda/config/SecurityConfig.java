@@ -41,7 +41,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // Permitir acceso a páginas públicas y recursos estáticos
-                        .requestMatchers("/", "/login-page", "/register", "/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers("/", "/login-page", "/register", "/terms-and-conditions", "/privacy-policy", "/css/**", "/js/**", "/images/**").permitAll()
                         // Permitir el endpoint de prueba
                         .requestMatchers("/test-endpoint", "/dashboard-test").permitAll()
                         // Requerir autenticación para todo lo demas

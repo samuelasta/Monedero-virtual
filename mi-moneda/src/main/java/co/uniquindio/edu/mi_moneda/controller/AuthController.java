@@ -64,11 +64,10 @@ public class AuthController {
         }
     }
 
-    /**
-     * Muestra el dashboard del cliente autenticado
-     */
-
-
+    @GetMapping("/terms-and-conditions")
+    public String showTermsAndConditions() {
+        return "terms";
+    }
     /**
      * Procesa la solicitud de cierre de sesión
      */

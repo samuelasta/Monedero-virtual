@@ -82,9 +82,6 @@ public class DashboardController {
     @Autowired
     private PuntosService puntosService;
 
-    /**
-     * Muestra el dashboard del cliente autenticado con toda su información
-     */
     @GetMapping("/dashboard")
     public String showDashboard(HttpSession session, Model model) {
         // Verificar si el usuario está autenticado
@@ -97,7 +94,18 @@ public class DashboardController {
             String clienteId = (String) session.getAttribute("clienteId");
             Cliente cliente = clienteService.buscarClientePorId(clienteId);
 
-            // Calcula el balance total sumando saldos de todos los monederos
+            System.out.println("=== CARGANDO DASHBOARD ===");
+            System.out.println("Cliente ID: " + clienteId);
+            System.out.println("Cliente nombre: " + cliente.getNombre());
+
+            //
+            // Esto asegura que tengamos los datos refresados, porque las listas propias es un problema
+            recargarMonederosCliente(cliente);
+
+            // Recargar el cliente después de la sincronización
+            cliente = clienteService.buscarClientePorId(clienteId);
+
+            // Calcula el balance total con los datos actualizados
             double balanceTotal = calcularBalanceTotal(cliente);
 
             // Busca las transacciones más recientes del cliente
@@ -115,9 +123,6 @@ public class DashboardController {
                     transaccionesProgramadas,
                     notificacionesNoLeidas);
             model.addAttribute("cliente", clienteDTO);
-
-
-            System.out.println(balanceTotal);
 
             model.addAttribute("balanceTotal", balanceTotal);
             model.addAttribute("cantidadMonederos", obtenerCantidadMonederos(cliente));
@@ -172,32 +177,100 @@ public class DashboardController {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy, HH:mm");
             model.addAttribute("formatter", formatter);
 
+            System.out.println("Dashboard cargado correctamente con balance: $" + balanceTotal);
+            System.out.println("===========================");
+
             return "dashboard";
         } catch (Exception e) {
+            System.err.println("Error en showDashboard: " + e.getMessage());
+            e.printStackTrace();
             session.setAttribute("error", "Error al cargar el dashboard: " + e.getMessage());
             return "redirect:/login-page";
         }
     }
 
 
+    /**
+     * Recarga y sincroniza la lista de monederos del cliente desde la base de datos
+     */
+    private void recargarMonederosCliente(Cliente cliente) {
+        try {
+            System.out.println("=== RECARGANDO MONEDEROS ===");
+
+            // Buscar todos los monederos del cliente en la BD
+            List<Monedero> monederosDB = monederoRepository.findByPropietario(cliente);
+
+            System.out.println("Monederos encontrados en BD: " + monederosDB.size());
+
+            // Recrear la lista enlazada con los datos frescos de la BD
+            SimpleList<Monedero> nuevaLista = new SimpleList<>();
+
+            double totalParaDebug = 0.0;
+            for (Monedero monedero : monederosDB) {
+                if (monedero.isActivo()) {
+                    nuevaLista.add(monedero);
+                    totalParaDebug += monedero.getSaldo();
+                    System.out.println("- " + monedero.getNombre() + ": $" + monedero.getSaldo());
+                }
+            }
+
+            System.out.println("Total calculado en recarga: $" + totalParaDebug);
+
+            // Actualizar la lista en el cliente
+            cliente.setMonederos(nuevaLista);
+
+            // Guardar el cliente con la lista actualizada
+            clienteRepository.save(cliente);
+
+            System.out.println("Lista de monederos recargada exitosamente");
+            System.out.println("===============================");
+
+        } catch (Exception e) {
+            System.err.println("Error al recargar monederos del cliente: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 
     /**
-     * Calcula el balance total de todos los monederos
+     * Calcula el balance total de todos los monederos usando listas enlazadas propias
      */
     private double calcularBalanceTotal(Cliente cliente) {
+        System.out.println("=== CALCULANDO BALANCE TOTAL ===");
+        System.out.println("Cliente: " + cliente.getNombre());
+
         double total = 0.0;
         SimpleList<Monedero> monederos = cliente.getMonederos();
 
-        // Si no hay monederos, devuelve 0
+        // Verificar si la lista está vacía o nula
         if (monederos == null || monederos.isEmpty()) {
-            return 0.0;
+            System.out.println("Lista de monederos vacía o nula, recargando...");
+            recargarMonederosCliente(cliente);
+            monederos = cliente.getMonederos();
         }
 
-        Node<Monedero> nodoActual = monederos.getFirstNode();
-        while (nodoActual != null) {
-            total += nodoActual.getValue().getSaldo();
-            nodoActual = nodoActual.getNextNodo();
+        // Calcular total usando la lista enlazada
+        if (monederos != null && !monederos.isEmpty()) {
+            Node<Monedero> nodoActual = monederos.getFirstNode();
+            int contador = 0;
+
+            while (nodoActual != null) {
+                Monedero monedero = nodoActual.getValue();
+                if (monedero != null && monedero.isActivo()) {
+                    double saldo = monedero.getSaldo();
+                    total += saldo;
+                    contador++;
+                    System.out.println("Monedero " + contador + ": " + monedero.getNombre() + " - $" + saldo);
+                }
+                nodoActual = nodoActual.getNextNodo();
+            }
+
+            System.out.println("Total de monederos procesados: " + contador);
+        } else {
+            System.out.println("No se pudieron cargar los monederos");
         }
+
+        System.out.println("Balance total final: $" + total);
+        System.out.println("================================");
 
         return total;
     }
@@ -226,11 +299,26 @@ public class DashboardController {
     }
 
     /**
-     * Obtiene la cantidad de monederos del cliente
+     * Obtiene la cantidad de monederos usando la lista enlazada
      */
     private int obtenerCantidadMonederos(Cliente cliente) {
-        SimpleList<Monedero> monederos = obtenerMonederos(cliente);
-        return monederos != null ? monederos.getSize() : 0;
+        SimpleList<Monedero> monederos = cliente.getMonederos();
+
+        if (monederos == null || monederos.isEmpty()) {
+            return 0;
+        }
+
+        int contador = 0;
+        Node<Monedero> nodoActual = monederos.getFirstNode();
+
+        while (nodoActual != null) {
+            if (nodoActual.getValue() != null && nodoActual.getValue().isActivo()) {
+                contador++;
+            }
+            nodoActual = nodoActual.getNextNodo();
+        }
+
+        return contador;
     }
 
     /**
